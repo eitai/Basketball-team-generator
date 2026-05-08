@@ -1,0 +1,20 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Player {
+  id          String  @id @default(cuid())
+  name        String
+  position    String
+  defense     Int     @default(5)
+  offense     Int     @default(5)
+  shooting    Int     @default(5)
+  passing     Int     @default(5)
+  rebounding  Int     @default(5)
+  fitness     Int     @default(5)
+  ballHandler Boolean @default(false)
+}
