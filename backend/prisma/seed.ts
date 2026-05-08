@@ -34,7 +34,11 @@ const players = [
 ];
 
 async function main() {
-  await prisma.player.deleteMany();
+  const count = await prisma.player.count();
+  if (count > 0) {
+    console.log(`Database already has ${count} players — skipping seed.`);
+    return;
+  }
   await prisma.player.createMany({ data: players });
   console.log(`Seeded ${players.length} players.`);
 }
