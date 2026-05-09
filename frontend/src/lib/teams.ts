@@ -89,6 +89,8 @@ export function generateBalancedTeams(
   const idealCenters = totalCenters / numTeams;
   const totalBallHandlers = players.filter(p => p.ballHandler).length;
   const maxBhPerTeam = Math.ceil(totalBallHandlers / numTeams);
+  // Highest-rated ball handler — should always be on the team with fewest BH
+  const topBH = sorted.find(p => p.ballHandler) ?? null;
 
   const score = (tms: Player[][]): number => {
     const sums = tms.map(teamSum);
@@ -109,8 +111,18 @@ export function generateBalancedTeams(
       });
     }
 
-    // Penalize teams that have more ball handlers than their fair share
+    // Penalize if top BH's team has more BH than the team with the fewest BH
+    // (top BH should always be on the team with the minimum number of BH)
     let bhConcentrationPenalty = 0;
+    if (totalBallHandlers > 1 && topBH) {
+      const topBHTeamIdx = tms.findIndex(t => t.some(p => p.id === topBH.id));
+      if (topBHTeamIdx >= 0) {
+        const topBHCount = tms[topBHTeamIdx]!.filter(p => p.ballHandler).length;
+        const otherMinBH = Math.min(...tms.filter((_, i) => i !== topBHTeamIdx).map(t => t.filter(p => p.ballHandler).length));
+        if (topBHCount > otherMinBH) bhConcentrationPenalty += (topBHCount - otherMinBH) * 300;
+      }
+    }
+    // Also prevent any team from exceeding the max threshold
     if (totalBallHandlers > 1) {
       tms.forEach(team => {
         const count = team.filter(p => p.ballHandler).length;
