@@ -43,12 +43,41 @@ export default function TeamCard({ team, color, teamIdx, onDragStart, onDrop, on
     e.stopPropagation();
     onDragStart(p);
 
+    // Create floating ghost that follows the finger
+    const ghost = document.createElement('div');
+    ghost.style.cssText = [
+      'position:fixed',
+      'z-index:9999',
+      'pointer-events:none',
+      'background:#1c1917',
+      'border:1px solid #f97316',
+      'border-radius:10px',
+      'padding:8px 14px',
+      'font-size:14px',
+      'font-weight:700',
+      'color:#f5f5f4',
+      'white-space:nowrap',
+      'box-shadow:0 8px 32px rgba(0,0,0,0.6)',
+      'transform:translate(-50%,-120%) scale(1.08)',
+      'opacity:0.95',
+    ].join(';');
+    ghost.textContent = p.name;
+    document.body.appendChild(ghost);
+
+    const firstTouch = e.touches[0];
+    if (firstTouch) {
+      ghost.style.left = `${firstTouch.clientX}px`;
+      ghost.style.top = `${firstTouch.clientY}px`;
+    }
+
     let currentTarget: number | null = null;
 
     const handleMove = (te: TouchEvent) => {
       te.preventDefault();
       const touch = te.touches[0];
       if (!touch) return;
+      ghost.style.left = `${touch.clientX}px`;
+      ghost.style.top = `${touch.clientY}px`;
       const el = document.elementFromPoint(touch.clientX, touch.clientY);
       let node: Element | null = el;
       while (node && !node.hasAttribute('data-team-idx')) node = node.parentElement;
@@ -62,6 +91,7 @@ export default function TeamCard({ team, color, teamIdx, onDragStart, onDrop, on
     const handleEnd = () => {
       document.removeEventListener('touchmove', handleMove);
       document.removeEventListener('touchend', handleEnd);
+      ghost.remove();
       onTouchDragOver(null);
       if (currentTarget !== null && currentTarget !== teamIdx) {
         onDrop(p.id, teamIdx, currentTarget);
@@ -142,7 +172,9 @@ export default function TeamCard({ team, color, teamIdx, onDragStart, onDrop, on
               } : undefined}
               onDragEnd={isAdmin ? onDragEnd : undefined}
               onTouchStart={handleTouchStart(p)}
-              className={`flex items-center gap-2 px-2 py-1.5 rounded-lg touch-none ${isAdmin ? 'hover:bg-stone-800/60 cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
+              className={`flex items-center gap-2 px-2 py-1.5 rounded-lg touch-none transition-opacity ${
+                draggingPlayer?.player.id === p.id ? 'opacity-30' : ''
+              } ${isAdmin ? 'hover:bg-stone-800/60 cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
             >
               <GripVertical size={13} className="text-stone-600 shrink-0" />
               <div className={`text-xs font-black ${color.text} w-4 tabular-nums`}>{i + 1}</div>
