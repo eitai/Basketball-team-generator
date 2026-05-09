@@ -16,8 +16,8 @@ type DraftState = PlayerDraft & { id?: string };
 export default function PlayerModal({ player, onSave, onClose, onDelete }: Props) {
   const [draft, setDraft] = useState<DraftState>(
     player
-      ? { ...player, ballHandler: player.ballHandler ?? false }
-      : { name: '', position: 'guard', defense: 5, offense: 5, shooting: 5, passing: 5, rebounding: 5, fitness: 5, ballHandler: false }
+      ? { ...player, ballHandler: player.ballHandler ?? false, generalRating: player.generalRating ?? 5 }
+      : { name: '', position: 'guard', defense: 5, offense: 5, shooting: 5, passing: 5, rebounding: 5, fitness: 5, ballHandler: false, generalRating: 5 }
   );
   const overall = computeOverall(draft as Player);
   const isValid = draft.name.trim().length > 0;
@@ -93,6 +93,25 @@ export default function PlayerModal({ player, onSave, onClose, onDelete }: Props
               <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${draft.ballHandler ? 'right-0.5' : 'left-0.5'}`} />
             </div>
           </button>
+
+          <div className="bg-gradient-to-l from-sky-500/10 to-sky-500/5 border border-sky-500/30 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <div className="text-sm font-black text-sky-300">יכולת כללית</div>
+                <div className="text-xs text-stone-500">תרומה לקבוצה — משקל עיקרי באיזון</div>
+              </div>
+              <span className="text-2xl font-black tabular-nums text-sky-400">{draft.generalRating}</span>
+            </div>
+            <input
+              type="range"
+              min="1"
+              max="10"
+              step="1"
+              value={draft.generalRating}
+              onChange={e => update('generalRating', parseInt(e.target.value) as DraftState['generalRating'])}
+              className="w-full accent-sky-500"
+            />
+          </div>
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-stone-400 mb-3">

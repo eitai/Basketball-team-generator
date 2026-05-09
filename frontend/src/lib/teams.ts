@@ -8,8 +8,12 @@ export const computeOverall = (p: Player): number => {
   return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
 };
 
+// 70% general rating, 30% category average
+export const computeBalancingScore = (p: Player): number =>
+  Math.round(computeOverall(p) * 0.3 + (p.generalRating ?? 5) * 0.7);
+
 export const teamSum = (t: Player[]): number =>
-  t.reduce((s, p) => s + computeOverall(p), 0);
+  t.reduce((s, p) => s + computeBalancingScore(p), 0);
 
 export const teamAvg = (t: Player[]): number =>
   t.length ? teamSum(t) / t.length : 0;
@@ -30,16 +34,16 @@ export function generateBalancedTeams(
   locked: Map<string, number> = new Map()
 ): Player[][] {
   if (players.length === 0 || numTeams < 1) return [];
-  const base = [...players].sort((a, b) => computeOverall(b) - computeOverall(a));
+  const base = [...players].sort((a, b) => computeBalancingScore(b) - computeBalancingScore(a));
 
   // When randomizing, shuffle players within same-rating groups so the snake
   // draft starts from a different arrangement each time.
   const sorted = randomize
     ? base.reduce<Player[]>((acc, p, i, arr) => {
-        const ov = computeOverall(p);
-        if (i === 0 || computeOverall(arr[i - 1]!) !== ov) {
+        const sc = computeBalancingScore(p);
+        if (i === 0 || computeBalancingScore(arr[i - 1]!) !== sc) {
           let end = i + 1;
-          while (end < arr.length && computeOverall(arr[end]!) === ov) end++;
+          while (end < arr.length && computeBalancingScore(arr[end]!) === sc) end++;
           acc.push(...shuffle(arr.slice(i, end)));
         }
         return acc;

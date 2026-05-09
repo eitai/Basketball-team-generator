@@ -11,6 +11,7 @@ export interface Player {
   rebounding: number;
   fitness: number;
   ballHandler: boolean;
+  generalRating: number;
 }
 
 export type PlayerDraft = Omit<Player, 'id'>;
