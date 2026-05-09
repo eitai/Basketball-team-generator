@@ -88,6 +88,8 @@ export function generateBalancedTeams(
   const totalCenters = players.filter(p => p.position === 'center').length;
   const idealCenters = totalCenters / numTeams;
   const totalBallHandlers = players.filter(p => p.ballHandler).length;
+  // Top ball handlers sorted by rating — ideally spread one per team
+  const topBallHandlers = sorted.filter(p => p.ballHandler).slice(0, numTeams);
 
   const score = (tms: Player[][]): number => {
     const sums = tms.map(teamSum);
@@ -108,6 +110,15 @@ export function generateBalancedTeams(
       });
     }
 
+    // Penalize having 2+ top ball handlers on the same team
+    let bhConcentrationPenalty = 0;
+    if (topBallHandlers.length > 1) {
+      tms.forEach(team => {
+        const count = team.filter(p => topBallHandlers.some(bh => bh.id === p.id)).length;
+        if (count > 1) bhConcentrationPenalty += (count - 1) * 200;
+      });
+    }
+
     const topPlayers = sorted.slice(0, numTeams);
     const teamsWithStars = new Set<number>();
     topPlayers.forEach(p => { tms.forEach((t, i) => { if (t.includes(p)) teamsWithStars.add(i); }); });
@@ -116,7 +127,7 @@ export function generateBalancedTeams(
     const topPerTeam = tms.map(t => t.filter(p => topHalf.includes(p)).length);
     const topMean = topPerTeam.reduce((a, b) => a + b, 0) / numTeams;
     const topVariance = topPerTeam.reduce((s, x) => s + (x - topMean) ** 2, 0) / numTeams;
-    return sumVariance + positionPenalty + ballHandlerPenalty + starPenalty + topVariance * 8;
+    return sumVariance + positionPenalty + ballHandlerPenalty + bhConcentrationPenalty + starPenalty + topVariance * 8;
   };
 
   let improved = true;
