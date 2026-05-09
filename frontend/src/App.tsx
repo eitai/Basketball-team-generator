@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import type { Player, PlayerDraft, Position } from './types/player';
 import { api } from './api/players';
-import { POSITIONS, TEAM_COLORS, ATTENDING_KEY, TEAMS_COUNT_KEY, LOCKED_KEY } from './lib/constants';
+import { TEAM_COLORS, ATTENDING_KEY, TEAMS_COUNT_KEY, LOCKED_KEY } from './lib/constants';
 import { computeOverall, teamSum, generateBalancedTeams } from './lib/teams';
 import { shareOnWhatsApp } from './lib/share';
 import PlayerModal from './components/PlayerModal';
