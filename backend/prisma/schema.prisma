@@ -16,6 +16,8 @@ model Player {
   passing     Int     @default(5)
   rebounding  Int     @default(5)
   fitness     Int     @default(5)
-  ballHandler   Boolean @default(false)
-  generalRating Int     @default(5)
+  ballHandler   Boolean  @default(false)
+  generalRating Int      @default(5)
+  isGuest       Boolean  @default(false)
+  createdAt     DateTime @default(now())
 }

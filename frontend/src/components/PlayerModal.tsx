@@ -9,15 +9,16 @@ interface Props {
   onSave: (data: Player | PlayerDraft) => void;
   onClose: () => void;
   onDelete: (id: string) => void;
+  defaultIsGuest?: boolean;
 }
 
 type DraftState = PlayerDraft & { id?: string };
 
-export default function PlayerModal({ player, onSave, onClose, onDelete }: Props) {
+export default function PlayerModal({ player, onSave, onClose, onDelete, defaultIsGuest = false }: Props) {
   const [draft, setDraft] = useState<DraftState>(
     player
-      ? { ...player, ballHandler: player.ballHandler ?? false, generalRating: player.generalRating ?? 5 }
-      : { name: '', position: 'guard', defense: 5, offense: 5, shooting: 5, passing: 5, rebounding: 5, fitness: 5, ballHandler: false, generalRating: 5 }
+      ? { ...player, ballHandler: player.ballHandler ?? false, generalRating: player.generalRating ?? 5, isGuest: player.isGuest ?? false }
+      : { name: '', position: 'guard', defense: 5, offense: 5, shooting: 5, passing: 5, rebounding: 5, fitness: 5, ballHandler: false, generalRating: 5, isGuest: defaultIsGuest }
   );
   const overall = computeOverall(draft as Player);
   const isValid = draft.name.trim().length > 0;
@@ -91,6 +92,24 @@ export default function PlayerModal({ player, onSave, onClose, onDelete }: Props
             </div>
             <div className={`w-10 h-5 rounded-full transition relative ${draft.ballHandler ? 'bg-sky-500' : 'bg-stone-700'}`}>
               <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${draft.ballHandler ? 'right-0.5' : 'left-0.5'}`} />
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => update('isGuest', !draft.isGuest)}
+            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border transition ${
+              draft.isGuest
+                ? 'bg-amber-500/15 border-amber-500/50 text-amber-300'
+                : 'bg-stone-950 border-stone-700 text-stone-400 hover:border-stone-500'
+            }`}
+          >
+            <div className="flex flex-col items-start gap-0.5">
+              <span className="font-bold text-sm">👤 שחקן אורח</span>
+              {draft.isGuest && <span className="text-[10px] text-amber-400/70">יימחק אוטומטית אחרי 24 שעות</span>}
+            </div>
+            <div className={`w-10 h-5 rounded-full transition relative ${draft.isGuest ? 'bg-amber-500' : 'bg-stone-700'}`}>
+              <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${draft.isGuest ? 'right-0.5' : 'left-0.5'}`} />
             </div>
           </button>
 

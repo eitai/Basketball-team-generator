@@ -12,6 +12,7 @@ export interface Player {
   fitness: number;
   ballHandler: boolean;
   generalRating: number;
+  isGuest: boolean;
 }
 
 export type PlayerDraft = Omit<Player, 'id'>;

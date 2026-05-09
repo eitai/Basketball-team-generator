@@ -4,6 +4,8 @@ import { prisma } from '../lib/prisma';
 const router = Router();
 
 router.get('/', async (_req, res) => {
+  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  await prisma.player.deleteMany({ where: { isGuest: true, createdAt: { lt: cutoff } } });
   const players = await prisma.player.findMany({ orderBy: { id: 'asc' } });
   res.json(players);
 });

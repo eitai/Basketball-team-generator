@@ -20,6 +20,8 @@ export default function PlayerCard({ player, attending, onToggle, onEdit, isAdmi
       className={`relative group rounded-xl border transition-all ${
         attending
           ? 'bg-stone-900 border-orange-500/60 shadow-md shadow-orange-500/10'
+          : player.isGuest
+          ? 'bg-stone-900/40 border-dashed border-amber-700/50 hover:border-amber-600/70'
           : 'bg-stone-900/40 border-stone-800 hover:border-stone-700'
       }`}
     >
@@ -46,11 +48,16 @@ export default function PlayerCard({ player, attending, onToggle, onEdit, isAdmi
             <div className={`font-bold truncate text-sm ${attending ? 'text-stone-100' : 'text-stone-400'}`}>
               {player.name}
             </div>
-            <div className="flex items-center gap-1 mt-0.5">
+            <div className="flex items-center gap-1 mt-0.5 flex-wrap">
               <span className="text-xs text-stone-500">{pos.label}</span>
               {player.ballHandler && (
                 <span className="flex items-center gap-0.5 text-[10px] font-bold text-sky-400">
                   🏀 מוביל
+                </span>
+              )}
+              {player.isGuest && (
+                <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 px-1 rounded">
+                  אורח
                 </span>
               )}
             </div>

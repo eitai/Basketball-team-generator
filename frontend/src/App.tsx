@@ -47,6 +47,7 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
   const [draggingPlayer, setDraggingPlayer] = useState<{ player: Player; fromTeamIdx: number } | null>(null);
   const [touchDragTargetIdx, setTouchDragTargetIdx] = useState<number | null>(null);
   const [isAdmin, setIsAdmin] = useState(() => sessionStorage.getItem('isAdmin') === '1');
+  const [editingAsGuest, setEditingAsGuest] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [adminPasswordInput, setAdminPasswordInput] = useState('');
   const [adminError, setAdminError] = useState('');
@@ -402,13 +403,22 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
               <span className='text-xs font-bold text-stone-500 bg-stone-800 px-2 py-0.5 rounded tabular-nums'>{players.length}</span>
             </h2>
             {isAdmin && (
-              <button
-                onClick={() => setEditing('new')}
-                className='bg-stone-800 hover:bg-stone-700 border border-stone-700 text-stone-100 font-bold px-3 py-2 rounded-lg flex items-center gap-1.5 transition text-sm'
-              >
-                <Plus size={16} />
-                שחקן חדש
-              </button>
+              <div className='flex gap-2'>
+                <button
+                  onClick={() => { setEditingAsGuest(false); setEditing('new'); }}
+                  className='bg-stone-800 hover:bg-stone-700 border border-stone-700 text-stone-100 font-bold px-3 py-2 rounded-lg flex items-center gap-1.5 transition text-sm'
+                >
+                  <Plus size={16} />
+                  שחקן חדש
+                </button>
+                <button
+                  onClick={() => { setEditingAsGuest(true); setEditing('new'); }}
+                  className='bg-amber-500/10 hover:bg-amber-500/20 border border-amber-600/40 text-amber-400 font-bold px-3 py-2 rounded-lg flex items-center gap-1.5 transition text-sm'
+                >
+                  <Plus size={16} />
+                  אורח
+                </button>
+              </div>
             )}
           </div>
 
@@ -475,7 +485,7 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
               <div className='text-5xl mb-3'>🏀</div>
               <h3 className='text-xl font-black mb-1'>בנה את הסגל שלך</h3>
               <p className='text-stone-400 text-sm mb-5'>
-                הוסף את כל השחקנים בקבוצה (אפשר עד ~60).
+                הוסף את כל השחקנים בקבוצה.
                 <br />
                 בכל פעם שתבוא לשחק תסמן רק מי שהגיע.
               </p>
@@ -494,17 +504,19 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
               <p className='text-stone-500 text-sm'>לא נמצאו שחקנים</p>
             </div>
           ) : (
-            <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2'>
-              {filteredPlayers.map((p) => (
-                <PlayerCard
-                  key={p.id}
-                  player={p}
-                  attending={attending.has(p.id)}
-                  onToggle={() => toggleAttending(p.id)}
-                  onEdit={() => setEditing(p)}
-                  isAdmin={isAdmin}
-                />
-              ))}
+            <div className='max-h-[55vh] md:max-h-none overflow-y-auto'>
+              <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2'>
+                {filteredPlayers.map((p) => (
+                  <PlayerCard
+                    key={p.id}
+                    player={p}
+                    attending={attending.has(p.id)}
+                    onToggle={() => toggleAttending(p.id)}
+                    onEdit={() => setEditing(p)}
+                    isAdmin={isAdmin}
+                  />
+                ))}
+              </div>
             </div>
           )}
         </section>
@@ -517,8 +529,9 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
       {editing && (
         <PlayerModal
           player={editing === 'new' ? null : editing}
+          defaultIsGuest={editing === 'new' ? editingAsGuest : undefined}
           onSave={handleSave}
-          onClose={() => setEditing(null)}
+          onClose={() => { setEditing(null); setEditingAsGuest(false); }}
           onDelete={handleDelete}
         />
       )}
