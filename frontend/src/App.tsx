@@ -6,7 +6,6 @@ import {
   Sparkles,
   TrendingUp,
   Loader2,
-  RotateCcw,
   Search,
   CheckSquare,
   Eraser,
@@ -36,8 +35,7 @@ export default function App() {
   const [filterPos, setFilterPos] = useState<'all' | Position>('all');
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
-  const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const [locked, setLocked] = useState<Map<string, number>>(() => {
+const [locked, setLocked] = useState<Map<string, number>>(() => {
     try {
       const raw = localStorage.getItem(LOCKED_KEY);
       if (!raw) return new Map();
@@ -181,14 +179,6 @@ export default function App() {
       setTeams(generateBalancedTeams(attendingPlayers, numTeams, true, locked));
       setGenerating(false);
     }, 400);
-  };
-
-  const handleResetAll = async () => {
-    await api.removeAll();
-    setPlayers([]);
-    persistAttending(new Set());
-    setTeams(null);
-    setShowResetConfirm(false);
   };
 
   const handleAdminLogin = async () => {
@@ -473,15 +463,6 @@ export default function App() {
                     </button>
                   )}
                 </div>
-                {isAdmin && (
-                  <button
-                    onClick={() => setShowResetConfirm(true)}
-                    className='text-stone-600 hover:text-rose-400 font-bold p-2 rounded-lg transition'
-                    title='איפוס מלא של הסגל'
-                  >
-                    <RotateCcw size={14} />
-                  </button>
-                )}
               </div>
             </div>
           )}
@@ -585,32 +566,6 @@ export default function App() {
         </div>
       )}
 
-      {showResetConfirm && (
-        <div
-          className='fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4'
-          onClick={() => setShowResetConfirm(false)}
-        >
-          <div
-            className='w-full max-w-sm bg-stone-900 border border-stone-700 rounded-2xl p-6 shadow-2xl'
-            onClick={(e) => e.stopPropagation()}
-            dir='rtl'
-          >
-            <h3 className='text-xl font-black mb-2'>למחוק את כל הסגל?</h3>
-            <p className='text-stone-400 text-sm mb-5'>פעולה זו תמחק את כל ה-{players.length} השחקנים. אי אפשר לבטל.</p>
-            <div className='flex gap-2 justify-end'>
-              <button
-                onClick={() => setShowResetConfirm(false)}
-                className='px-4 py-2 rounded-lg bg-stone-800 hover:bg-stone-700 font-bold'
-              >
-                ביטול
-              </button>
-              <button onClick={handleResetAll} className='px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 font-bold'>
-                כן, מחק
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
