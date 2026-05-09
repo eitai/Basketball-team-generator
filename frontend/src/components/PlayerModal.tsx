@@ -49,7 +49,6 @@ export default function PlayerModal({ player, onSave, onClose, onDelete }: Props
               שם השחקן
             </label>
             <input
-              autoFocus
               value={draft.name}
               onChange={e => update('name', e.target.value)}
               placeholder="לדוגמה: דני"
