@@ -52,7 +52,7 @@ export default function PlayerCard({ player, attending, onToggle, onEdit, isAdmi
               <span className="text-xs text-stone-500">{pos.label}</span>
               {player.ballHandler && (
                 <span className="flex items-center gap-0.5 text-[10px] font-bold text-sky-400">
-                  🏀 מוביל
+                  🏀 רכז
                 </span>
               )}
               {player.isGuest && (

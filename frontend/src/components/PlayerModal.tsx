@@ -88,7 +88,7 @@ export default function PlayerModal({ player, onSave, onClose, onDelete, default
             }`}
           >
             <div className="flex items-center gap-2 font-bold text-sm">
-              🏀 מוביל כדור
+              🏀 רכז
             </div>
             <div className={`w-10 h-5 rounded-full transition relative ${draft.ballHandler ? 'bg-sky-500' : 'bg-stone-700'}`}>
               <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${draft.ballHandler ? 'right-0.5' : 'left-0.5'}`} />

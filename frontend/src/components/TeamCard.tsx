@@ -184,7 +184,7 @@ export default function TeamCard({ team, color, teamIdx, onDragStart, onDrop, on
                   <span className="text-[10px] text-stone-500">{POSITIONS[p.position].label}</span>
                   {p.ballHandler && (
                     <span className="flex items-center gap-0.5 text-[10px] font-bold text-sky-400">
-                      🏀 מוביל
+                      🏀 רכז
                     </span>
                   )}
                 </div>
