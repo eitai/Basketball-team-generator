@@ -61,8 +61,13 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
       try {
         const fetched = await api.getAll();
         setPlayers(fetched);
+        const validIds = new Set(fetched.map(p => p.id));
         const savedAttending = localStorage.getItem(ATTENDING_KEY);
-        if (savedAttending) setAttending(new Set(JSON.parse(savedAttending) as string[]));
+        if (savedAttending) {
+          const saved = new Set((JSON.parse(savedAttending) as string[]).filter(id => validIds.has(id)));
+          setAttending(saved);
+          localStorage.setItem(ATTENDING_KEY, JSON.stringify([...saved]));
+        }
         const savedCount = localStorage.getItem(TEAMS_COUNT_KEY);
         if (savedCount) setNumTeams(parseInt(savedCount) || 3);
       } catch (e) {
@@ -221,7 +226,7 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
     });
   }, [players, search, filterPos, attending]);
 
-  const attendingCount = attending.size;
+  const attendingCount = players.filter(p => attending.has(p.id)).length;
 
   if (loading) {
     return (
