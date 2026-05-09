@@ -88,8 +88,7 @@ export function generateBalancedTeams(
   const totalCenters = players.filter(p => p.position === 'center').length;
   const idealCenters = totalCenters / numTeams;
   const totalBallHandlers = players.filter(p => p.ballHandler).length;
-  // Top ball handlers sorted by rating — ideally spread one per team
-  const topBallHandlers = sorted.filter(p => p.ballHandler).slice(0, numTeams);
+  const maxBhPerTeam = Math.ceil(totalBallHandlers / numTeams);
 
   const score = (tms: Player[][]): number => {
     const sums = tms.map(teamSum);
@@ -110,12 +109,12 @@ export function generateBalancedTeams(
       });
     }
 
-    // Penalize having 2+ top ball handlers on the same team
+    // Penalize teams that have more ball handlers than their fair share
     let bhConcentrationPenalty = 0;
-    if (topBallHandlers.length > 1) {
+    if (totalBallHandlers > 1) {
       tms.forEach(team => {
-        const count = team.filter(p => topBallHandlers.some(bh => bh.id === p.id)).length;
-        if (count > 1) bhConcentrationPenalty += (count - 1) * 200;
+        const count = team.filter(p => p.ballHandler).length;
+        if (count > maxBhPerTeam) bhConcentrationPenalty += (count - maxBhPerTeam) * 200;
       });
     }
 
