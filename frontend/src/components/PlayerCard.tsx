@@ -8,9 +8,10 @@ interface Props {
   attending: boolean;
   onToggle: () => void;
   onEdit: () => void;
+  isAdmin: boolean;
 }
 
-export default function PlayerCard({ player, attending, onToggle, onEdit }: Props) {
+export default function PlayerCard({ player, attending, onToggle, onEdit, isAdmin }: Props) {
   const overall = computeOverall(player);
   const pos = POSITIONS[player.position];
 
@@ -22,13 +23,15 @@ export default function PlayerCard({ player, attending, onToggle, onEdit }: Prop
           : 'bg-stone-900/40 border-stone-800 hover:border-stone-700'
       }`}
     >
-      <button
-        onClick={e => { e.stopPropagation(); onEdit(); }}
-        className="absolute top-1 left-1 w-7 h-7 rounded-md bg-stone-800/80 hover:bg-stone-700 text-stone-400 hover:text-stone-100 flex items-center justify-center opacity-60 hover:opacity-100 transition z-10"
-        aria-label="ערוך"
-      >
-        <Edit3 size={13} />
-      </button>
+      {isAdmin && (
+        <button
+          onClick={e => { e.stopPropagation(); onEdit(); }}
+          className="absolute top-1 left-1 w-7 h-7 rounded-md bg-stone-800/80 hover:bg-stone-700 text-stone-400 hover:text-stone-100 flex items-center justify-center opacity-60 hover:opacity-100 transition z-10"
+          aria-label="ערוך"
+        >
+          <Edit3 size={13} />
+        </button>
+      )}
 
       <button onClick={onToggle} className="w-full p-3 text-right">
         <div className="flex items-start gap-2">

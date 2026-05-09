@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import playerRoutes from './routes/players';
+import authRoutes from './routes/auth';
 import { prisma } from './lib/prisma';
 
 dotenv.config();
@@ -18,6 +19,7 @@ if (!isProd) {
 
 app.use(express.json());
 app.use('/api/players', playerRoutes);
+app.use('/api/auth', authRoutes);
 
 if (isProd) {
   const frontendDist = path.resolve(__dirname, '../../frontend/dist');

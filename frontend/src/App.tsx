@@ -14,6 +14,8 @@ import {
   RefreshCw,
   Share2,
   Lock,
+  Unlock,
+  ShieldCheck,
 } from 'lucide-react';
 import type { Player, PlayerDraft, Position } from './types/player';
 import { api } from './api/players';
@@ -46,6 +48,11 @@ export default function App() {
   });
   const [draggingPlayer, setDraggingPlayer] = useState<{ player: Player; fromTeamIdx: number } | null>(null);
   const [touchDragTargetIdx, setTouchDragTargetIdx] = useState<number | null>(null);
+  const [isAdmin, setIsAdmin] = useState(() => sessionStorage.getItem('isAdmin') === '1');
+  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [adminPasswordInput, setAdminPasswordInput] = useState('');
+  const [adminError, setAdminError] = useState('');
+  const [adminLoading, setAdminLoading] = useState(false);
   // useRef imported for potential future use; satisfies linter
   const _ref = useRef(null);
   void _ref;
@@ -184,6 +191,30 @@ export default function App() {
     setShowResetConfirm(false);
   };
 
+  const handleAdminLogin = async () => {
+    if (!adminPasswordInput) return;
+    setAdminLoading(true);
+    setAdminError('');
+    try {
+      const ok = await api.verifyAdmin(adminPasswordInput);
+      if (ok) {
+        sessionStorage.setItem('isAdmin', '1');
+        setIsAdmin(true);
+        setShowAdminModal(false);
+        setAdminPasswordInput('');
+      }
+    } catch {
+      setAdminError('סיסמה שגויה');
+    } finally {
+      setAdminLoading(false);
+    }
+  };
+
+  const handleAdminLogout = () => {
+    sessionStorage.removeItem('isAdmin');
+    setIsAdmin(false);
+  };
+
   const filteredPlayers = useMemo(() => {
     let result = players;
     if (search.trim()) {
@@ -227,14 +258,29 @@ export default function App() {
 
       <div className='max-w-6xl mx-auto px-4 py-6 md:py-8'>
         <header className='mb-6'>
-          <div className='flex items-center gap-2 text-orange-400 text-xs font-black uppercase tracking-[0.25em] mb-1'>
-            <span className='w-8 h-px bg-orange-500' />
-            BASKETBALL · 5 ON 5
+          <div className='flex items-start justify-between'>
+            <div>
+              <div className='flex items-center gap-2 text-orange-400 text-xs font-black uppercase tracking-[0.25em] mb-1'>
+                <span className='w-8 h-px bg-orange-500' />
+                BASKETBALL · 5 ON 5
+              </div>
+              <h1 className='text-3xl md:text-5xl font-black tracking-tight leading-none'>
+                Hoop<span className='text-orange-500'>Teams</span>
+              </h1>
+              <p className='text-stone-400 text-sm mt-2 max-w-md'>סמן מי הגיע היום וקבל קבוצות מאוזנות בלחיצה</p>
+            </div>
+            <button
+              onClick={() => isAdmin ? handleAdminLogout() : setShowAdminModal(true)}
+              className={`mt-1 flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition ${
+                isAdmin
+                  ? 'bg-amber-500/10 border-amber-500/40 text-amber-400 hover:bg-amber-500/20'
+                  : 'bg-stone-900 border-stone-700 text-stone-500 hover:text-stone-300 hover:border-stone-600'
+              }`}
+              title={isAdmin ? 'צא ממצב מנהל' : 'כניסת מנהל'}
+            >
+              {isAdmin ? <><ShieldCheck size={14} /> מנהל</> : <Lock size={14} />}
+            </button>
           </div>
-          <h1 className='text-3xl md:text-5xl font-black tracking-tight leading-none'>
-            Hoop<span className='text-orange-500'>Teams</span>
-          </h1>
-          <p className='text-stone-400 text-sm mt-2 max-w-md'>סמן מי הגיע היום וקבל קבוצות מאוזנות בלחיצה</p>
         </header>
 
         <div className='bg-gradient-to-l from-stone-900 to-stone-900/50 border border-stone-800 rounded-2xl p-4 mb-6'>
@@ -364,13 +410,15 @@ export default function App() {
               סגל
               <span className='text-xs font-bold text-stone-500 bg-stone-800 px-2 py-0.5 rounded tabular-nums'>{players.length}</span>
             </h2>
-            <button
-              onClick={() => setEditing('new')}
-              className='bg-stone-800 hover:bg-stone-700 border border-stone-700 text-stone-100 font-bold px-3 py-2 rounded-lg flex items-center gap-1.5 transition text-sm'
-            >
-              <Plus size={16} />
-              שחקן חדש
-            </button>
+            {isAdmin && (
+              <button
+                onClick={() => setEditing('new')}
+                className='bg-stone-800 hover:bg-stone-700 border border-stone-700 text-stone-100 font-bold px-3 py-2 rounded-lg flex items-center gap-1.5 transition text-sm'
+              >
+                <Plus size={16} />
+                שחקן חדש
+              </button>
+            )}
           </div>
 
           {players.length > 0 && (
@@ -425,13 +473,15 @@ export default function App() {
                     </button>
                   )}
                 </div>
-                <button
-                  onClick={() => setShowResetConfirm(true)}
-                  className='text-stone-600 hover:text-rose-400 font-bold p-2 rounded-lg transition'
-                  title='איפוס מלא של הסגל'
-                >
-                  <RotateCcw size={14} />
-                </button>
+                {isAdmin && (
+                  <button
+                    onClick={() => setShowResetConfirm(true)}
+                    className='text-stone-600 hover:text-rose-400 font-bold p-2 rounded-lg transition'
+                    title='איפוס מלא של הסגל'
+                  >
+                    <RotateCcw size={14} />
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -445,13 +495,15 @@ export default function App() {
                 <br />
                 בכל פעם שתבוא לשחק תסמן רק מי שהגיע.
               </p>
-              <button
-                onClick={() => setEditing('new')}
-                className='bg-orange-500 hover:bg-orange-400 text-white font-bold px-5 py-2.5 rounded-lg inline-flex items-center gap-2'
-              >
-                <Plus size={16} />
-                הוסף שחקן ראשון
-              </button>
+              {isAdmin && (
+                <button
+                  onClick={() => setEditing('new')}
+                  className='bg-orange-500 hover:bg-orange-400 text-white font-bold px-5 py-2.5 rounded-lg inline-flex items-center gap-2'
+                >
+                  <Plus size={16} />
+                  הוסף שחקן ראשון
+                </button>
+              )}
             </div>
           ) : filteredPlayers.length === 0 ? (
             <div className='bg-stone-900/50 border border-stone-800 rounded-xl p-8 text-center'>
@@ -466,6 +518,7 @@ export default function App() {
                   attending={attending.has(p.id)}
                   onToggle={() => toggleAttending(p.id)}
                   onEdit={() => setEditing(p)}
+                  isAdmin={isAdmin}
                 />
               ))}
             </div>
@@ -484,6 +537,52 @@ export default function App() {
           onClose={() => setEditing(null)}
           onDelete={handleDelete}
         />
+      )}
+
+      {showAdminModal && (
+        <div
+          className='fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4'
+          onClick={() => { setShowAdminModal(false); setAdminPasswordInput(''); setAdminError(''); }}
+        >
+          <div
+            className='w-full max-w-sm bg-stone-900 border border-stone-700 rounded-2xl p-6 shadow-2xl'
+            onClick={(e) => e.stopPropagation()}
+            dir='rtl'
+          >
+            <div className='flex items-center gap-2 mb-4'>
+              <Lock size={18} className='text-amber-400' />
+              <h3 className='text-lg font-black'>כניסת מנהל</h3>
+            </div>
+            <p className='text-stone-400 text-sm mb-4'>הזן את הסיסמה כדי לערוך שחקנים</p>
+            <input
+              autoFocus
+              type='password'
+              value={adminPasswordInput}
+              onChange={(e) => { setAdminPasswordInput(e.target.value); setAdminError(''); }}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleAdminLogin(); }}
+              placeholder='סיסמה'
+              className='w-full bg-stone-950 border border-stone-700 rounded-lg px-3 py-2 text-sm text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-500/60 transition mb-1'
+            />
+            {adminError && <p className='text-rose-400 text-xs mb-3'>{adminError}</p>}
+            {!adminError && <div className='mb-3' />}
+            <div className='flex gap-2 justify-end'>
+              <button
+                onClick={() => { setShowAdminModal(false); setAdminPasswordInput(''); setAdminError(''); }}
+                className='px-4 py-2 rounded-lg bg-stone-800 hover:bg-stone-700 font-bold text-sm'
+              >
+                ביטול
+              </button>
+              <button
+                onClick={handleAdminLogin}
+                disabled={adminLoading || !adminPasswordInput}
+                className='px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 disabled:opacity-50 font-bold text-sm text-stone-900 flex items-center gap-1.5'
+              >
+                {adminLoading ? <Loader2 size={14} className='animate-spin' /> : <Unlock size={14} />}
+                כניסה
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {showResetConfirm && (

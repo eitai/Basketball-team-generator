@@ -18,4 +18,7 @@ export const api = {
 
   removeAll: () =>
     axios.delete(BASE),
+
+  verifyAdmin: (password: string) =>
+    axios.post<{ ok: boolean }>('/api/auth/verify', { password }).then(r => r.data.ok),
 };
