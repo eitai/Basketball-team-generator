@@ -17,9 +17,10 @@ interface Props {
   onLockToggle: (playerId: string, teamIdx: number | null) => void;
   isTouchDragOver: boolean;
   onTouchDragOver: (teamIdx: number | null) => void;
+  isAdmin: boolean;
 }
 
-export default function TeamCard({ team, color, teamIdx, onDragStart, onDrop, onDragEnd, draggingPlayer, locked, onLockToggle, isTouchDragOver, onTouchDragOver }: Props) {
+export default function TeamCard({ team, color, teamIdx, onDragStart, onDrop, onDragEnd, draggingPlayer, locked, onLockToggle, isTouchDragOver, onTouchDragOver, isAdmin }: Props) {
   const [isDragOver, setIsDragOver] = useState(false);
   const isOver = isDragOver || isTouchDragOver;
 
@@ -38,6 +39,7 @@ export default function TeamCard({ team, color, teamIdx, onDragStart, onDrop, on
   const previewAvg = previewTeam ? teamAvg(previewTeam) : null;
 
   const handleTouchStart = (p: Player) => (e: React.TouchEvent) => {
+    if (!isAdmin) return;
     e.stopPropagation();
     onDragStart(p);
 
@@ -79,18 +81,18 @@ export default function TeamCard({ team, color, teamIdx, onDragStart, onDrop, on
           ? `border-transparent ring-2 ring-offset-1 ring-offset-stone-950 ${color.ring} scale-[1.01]`
           : `${color.border} ${color.glow}`
       }`}
-      onDragOver={e => { e.preventDefault(); setIsDragOver(true); }}
-      onDragLeave={e => {
+      onDragOver={isAdmin ? e => { e.preventDefault(); setIsDragOver(true); } : undefined}
+      onDragLeave={isAdmin ? e => {
         if (!e.currentTarget.contains(e.relatedTarget as Node)) setIsDragOver(false);
-      }}
-      onDrop={e => {
+      } : undefined}
+      onDrop={isAdmin ? e => {
         e.preventDefault();
         setIsDragOver(false);
         try {
           const { playerId, fromTeamIdx } = JSON.parse(e.dataTransfer.getData('text/plain')) as { playerId: string; fromTeamIdx: number };
           onDrop(playerId, fromTeamIdx, teamIdx);
         } catch {}
-      }}
+      } : undefined}
     >
       <div className={`${color.bg} px-5 py-3`}>
         <div className="flex items-center justify-between">
@@ -132,15 +134,15 @@ export default function TeamCard({ team, color, teamIdx, onDragStart, onDrop, on
           return (
             <div
               key={p.id}
-              draggable
-              onDragStart={e => {
+              draggable={isAdmin}
+              onDragStart={isAdmin ? e => {
                 e.dataTransfer.setData('text/plain', JSON.stringify({ playerId: p.id, fromTeamIdx: teamIdx }));
                 e.dataTransfer.effectAllowed = 'move';
                 onDragStart(p);
-              }}
-              onDragEnd={onDragEnd}
+              } : undefined}
+              onDragEnd={isAdmin ? onDragEnd : undefined}
               onTouchStart={handleTouchStart(p)}
-              className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-stone-800/60 cursor-grab active:cursor-grabbing touch-none"
+              className={`flex items-center gap-2 px-2 py-1.5 rounded-lg touch-none ${isAdmin ? 'hover:bg-stone-800/60 cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
             >
               <GripVertical size={13} className="text-stone-600 shrink-0" />
               <div className={`text-xs font-black ${color.text} w-4 tabular-nums`}>{i + 1}</div>
@@ -156,17 +158,19 @@ export default function TeamCard({ team, color, teamIdx, onDragStart, onDrop, on
                 </div>
               </div>
               <div className="text-base font-black text-stone-100 tabular-nums">{ov}</div>
-              <button
-                onClick={e => { e.stopPropagation(); onLockToggle(p.id, locked.get(p.id) === teamIdx ? null : teamIdx); }}
-                className={`w-6 h-6 rounded-md flex items-center justify-center transition shrink-0 ${
-                  locked.get(p.id) === teamIdx
-                    ? `${color.bg} text-white opacity-100`
-                    : 'text-stone-600 hover:text-stone-300 opacity-50 hover:opacity-100'
-                }`}
-                title={locked.get(p.id) === teamIdx ? 'בטל נעילה' : 'נעל לקבוצה זו'}
-              >
-                <Lock size={11} />
-              </button>
+              {isAdmin && (
+                <button
+                  onClick={e => { e.stopPropagation(); onLockToggle(p.id, locked.get(p.id) === teamIdx ? null : teamIdx); }}
+                  className={`w-6 h-6 rounded-md flex items-center justify-center transition shrink-0 ${
+                    locked.get(p.id) === teamIdx
+                      ? `${color.bg} text-white opacity-100`
+                      : 'text-stone-600 hover:text-stone-300 opacity-50 hover:opacity-100'
+                  }`}
+                  title={locked.get(p.id) === teamIdx ? 'בטל נעילה' : 'נעל לקבוצה זו'}
+                >
+                  <Lock size={11} />
+                </button>
+              )}
             </div>
           );
         })}

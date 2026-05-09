@@ -33,7 +33,7 @@ export default function PlayerCard({ player, attending, onToggle, onEdit, isAdmi
         </button>
       )}
 
-      <button onClick={onToggle} className="w-full p-3 text-right">
+      <button onClick={isAdmin ? onToggle : undefined} className={`w-full p-3 text-right ${!isAdmin ? 'cursor-default' : ''}`}>
         <div className="flex items-start gap-2">
           <div
             className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 mt-0.5 transition ${

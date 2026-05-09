@@ -288,9 +288,9 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
                 {[2, 3, 4].map((n) => (
                   <button
                     key={n}
-                    onClick={() => persistTeamsCount(n)}
+                    onClick={isAdmin ? () => persistTeamsCount(n) : undefined}
                     className={`px-3 py-1.5 text-sm font-black tabular-nums transition ${
-                      numTeams === n ? 'bg-orange-500 text-white' : 'text-stone-400 hover:text-stone-100'
+                      numTeams === n ? 'bg-orange-500 text-white' : isAdmin ? 'text-stone-400 hover:text-stone-100' : 'text-stone-600 cursor-default'
                     }`}
                   >
                     {n}
@@ -300,7 +300,7 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
             </div>
             <button
               onClick={handleGenerate}
-              disabled={attendingCount < numTeams * 2 || generating}
+              disabled={!isAdmin || attendingCount < numTeams * 2 || generating}
               className='bg-orange-500 hover:bg-orange-400 disabled:bg-stone-800 disabled:text-stone-600 disabled:cursor-not-allowed text-white font-black px-5 md:px-6 py-3 rounded-xl flex items-center gap-2 transition shadow-lg shadow-orange-500/20'
             >
               {generating ? (
@@ -315,7 +315,7 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
                 </>
               )}
             </button>
-            {locked.size > 0 && (
+            {isAdmin && locked.size > 0 && (
               <button
                 onClick={handleClearLocks}
                 className='text-xs text-stone-500 hover:text-amber-400 font-bold transition flex items-center gap-1'
@@ -359,8 +359,8 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
                 </button>
                 <button
                   onClick={handleReshuffle}
-                  disabled={generating}
-                  className='flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 disabled:opacity-50 text-stone-300 font-bold text-xs transition border border-stone-700'
+                  disabled={!isAdmin || generating}
+                  className='flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 disabled:opacity-50 disabled:cursor-not-allowed text-stone-300 font-bold text-xs transition border border-stone-700'
                   title='סדר מחדש'
                 >
                   {generating ? <Loader2 size={14} className='animate-spin' /> : <RefreshCw size={14} />}
@@ -387,6 +387,7 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
                   onLockToggle={handleLockToggle}
                   isTouchDragOver={touchDragTargetIdx === idx}
                   onTouchDragOver={setTouchDragTargetIdx}
+                  isAdmin={isAdmin}
                 />
               ))}
             </div>
@@ -443,26 +444,28 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
                     </button>
                   ))}
                 </div>
-                <div className='flex gap-1'>
-                  <button
-                    onClick={() => selectAllVisible(filteredPlayers.map((p) => p.id))}
-                    className='bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold px-3 py-2 rounded-lg flex items-center gap-1 transition text-xs'
-                    title='סמן את כל המוצגים'
-                  >
-                    <CheckSquare size={14} />
-                    בחר הכל
-                  </button>
-                  {attendingCount > 0 && (
+                {isAdmin && (
+                  <div className='flex gap-1'>
                     <button
-                      onClick={clearAttending}
-                      className='bg-stone-800 hover:bg-stone-700 text-stone-400 hover:text-rose-400 font-bold px-3 py-2 rounded-lg flex items-center gap-1 transition text-xs'
-                      title='נקה את כל הסימונים'
+                      onClick={() => selectAllVisible(filteredPlayers.map((p) => p.id))}
+                      className='bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold px-3 py-2 rounded-lg flex items-center gap-1 transition text-xs'
+                      title='סמן את כל המוצגים'
                     >
-                      <Eraser size={14} />
-                      נקה
+                      <CheckSquare size={14} />
+                      בחר הכל
                     </button>
-                  )}
-                </div>
+                    {attendingCount > 0 && (
+                      <button
+                        onClick={clearAttending}
+                        className='bg-stone-800 hover:bg-stone-700 text-stone-400 hover:text-rose-400 font-bold px-3 py-2 rounded-lg flex items-center gap-1 transition text-xs'
+                        title='נקה את כל הסימונים'
+                      >
+                        <Eraser size={14} />
+                        נקה
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}
