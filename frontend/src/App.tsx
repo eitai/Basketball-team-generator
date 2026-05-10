@@ -15,6 +15,8 @@ import {
   Lock,
   Unlock,
   ShieldCheck,
+  Download,
+  X,
 } from 'lucide-react';
 import type { Player, PlayerDraft, Position } from './types/player';
 import { api } from './api/players';
@@ -24,6 +26,11 @@ import { shareOnWhatsApp } from './lib/share';
 import PlayerModal from './components/PlayerModal';
 import PlayerCard from './components/PlayerCard';
 import TeamCard from './components/TeamCard';
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
 
 export default function App() {
   const [players, setPlayers] = useState<Player[]>([]);
@@ -48,6 +55,10 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
   const [touchDragTargetIdx, setTouchDragTargetIdx] = useState<number | null>(null);
   const [isAdmin, setIsAdmin] = useState(() => sessionStorage.getItem('isAdmin') === '1');
   const [editingAsGuest, setEditingAsGuest] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState<Event | null>(null);
+  const [showIOSInstall, setShowIOSInstall] = useState(false);
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches;
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [adminPasswordInput, setAdminPasswordInput] = useState('');
   const [adminError, setAdminError] = useState('');
@@ -55,6 +66,12 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
   // useRef imported for potential future use; satisfies linter
   const _ref = useRef(null);
   void _ref;
+
+  useEffect(() => {
+    const handler = (e: Event) => { e.preventDefault(); setInstallPrompt(e); };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -187,6 +204,15 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
     }, 400);
   };
 
+  const handleInstall = async () => {
+    if (isIOS) { setShowIOSInstall(true); return; }
+    if (!installPrompt) return;
+    const prompt = installPrompt as BeforeInstallPromptEvent;
+    prompt.prompt();
+    await prompt.userChoice;
+    setInstallPrompt(null);
+  };
+
   const handleAdminLogin = async () => {
     if (!adminPasswordInput) return;
     setAdminLoading(true);
@@ -265,17 +291,29 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
               </h1>
               <p className='text-stone-400 text-sm mt-2 max-w-md'>סמן מי הגיע היום וקבל קבוצות מאוזנות בלחיצה</p>
             </div>
-            <button
-              onClick={() => isAdmin ? handleAdminLogout() : setShowAdminModal(true)}
-              className={`mt-1 flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition ${
-                isAdmin
-                  ? 'bg-amber-500/10 border-amber-500/40 text-amber-400 hover:bg-amber-500/20'
-                  : 'bg-stone-900 border-stone-700 text-stone-500 hover:text-stone-300 hover:border-stone-600'
-              }`}
-              title={isAdmin ? 'צא ממצב מנהל' : 'כניסת מנהל'}
-            >
-              {isAdmin ? <><ShieldCheck size={14} /> מנהל</> : <Lock size={14} />}
-            </button>
+            <div className='flex items-center gap-2 mt-1'>
+              {!isInStandaloneMode && (installPrompt || isIOS) && (
+                <button
+                  onClick={handleInstall}
+                  className='flex items-center gap-1.5 px-3 py-2 rounded-xl border bg-orange-500/10 border-orange-500/40 text-orange-400 hover:bg-orange-500/20 text-xs font-bold transition'
+                  title='התקן אפליקציה'
+                >
+                  <Download size={14} />
+                  התקן
+                </button>
+              )}
+              <button
+                onClick={() => isAdmin ? handleAdminLogout() : setShowAdminModal(true)}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition ${
+                  isAdmin
+                    ? 'bg-amber-500/10 border-amber-500/40 text-amber-400 hover:bg-amber-500/20'
+                    : 'bg-stone-900 border-stone-700 text-stone-500 hover:text-stone-300 hover:border-stone-600'
+                }`}
+                title={isAdmin ? 'צא ממצב מנהל' : 'כניסת מנהל'}
+              >
+                {isAdmin ? <><ShieldCheck size={14} /> מנהל</> : <Lock size={14} />}
+              </button>
+            </div>
           </div>
         </header>
 
@@ -539,6 +577,47 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
           onClose={() => { setEditing(null); setEditingAsGuest(false); }}
           onDelete={handleDelete}
         />
+      )}
+
+      {showIOSInstall && (
+        <div
+          className='fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm p-4'
+          onClick={() => setShowIOSInstall(false)}
+        >
+          <div
+            className='w-full max-w-sm bg-stone-900 border border-stone-700 rounded-2xl p-6 shadow-2xl mb-4'
+            onClick={e => e.stopPropagation()}
+            dir='rtl'
+          >
+            <div className='flex items-center justify-between mb-4'>
+              <div className='flex items-center gap-2'>
+                <img src='/icons/icon-192x192.png' className='w-10 h-10 rounded-xl' />
+                <div>
+                  <div className='font-black text-stone-100'>HoopTeams</div>
+                  <div className='text-xs text-stone-400'>התקן כאפליקציה</div>
+                </div>
+              </div>
+              <button onClick={() => setShowIOSInstall(false)} className='text-stone-500 hover:text-stone-300'>
+                <X size={20} />
+              </button>
+            </div>
+            <ol className='space-y-3 text-sm text-stone-300'>
+              <li className='flex items-start gap-3'>
+                <span className='bg-orange-500 text-white rounded-full w-5 h-5 flex items-center justify-center shrink-0 font-black text-xs mt-0.5'>1</span>
+                <span>לחץ על כפתור השיתוף <strong className='text-white'>↑</strong> בתחתית Safari</span>
+              </li>
+              <li className='flex items-start gap-3'>
+                <span className='bg-orange-500 text-white rounded-full w-5 h-5 flex items-center justify-center shrink-0 font-black text-xs mt-0.5'>2</span>
+                <span>גלול למטה ובחר <strong className='text-white'>"הוסף למסך הבית"</strong></span>
+              </li>
+              <li className='flex items-start gap-3'>
+                <span className='bg-orange-500 text-white rounded-full w-5 h-5 flex items-center justify-center shrink-0 font-black text-xs mt-0.5'>3</span>
+                <span>לחץ <strong className='text-white'>"הוסף"</strong> בפינה הימנית העליונה</span>
+              </li>
+            </ol>
+            <p className='text-xs text-stone-500 mt-4 text-center'>עובד רק דרך Safari</p>
+          </div>
+        </div>
       )}
 
       {showAdminModal && (
