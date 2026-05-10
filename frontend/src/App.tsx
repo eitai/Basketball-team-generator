@@ -282,13 +282,7 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
         <header className='mb-6'>
           <div className='flex items-start justify-between'>
             <div>
-              <div className='flex items-center gap-2 text-orange-400 text-xs font-black uppercase tracking-[0.25em] mb-1'>
-                <span className='w-8 h-px bg-orange-500' />
-                BASKETBALL · 5 ON 5
-              </div>
-              <h1 className='text-3xl md:text-5xl font-black tracking-tight leading-none'>
-                Hoop<span className='text-orange-500'>Teams</span>
-              </h1>
+              <img src='/widelogo.png' alt='HoopTeams' className='h-14 md:h-20 w-auto object-contain' />
               <p className='text-stone-400 text-sm mt-2 max-w-md'>סמן מי הגיע היום וקבל קבוצות מאוזנות בלחיצה</p>
             </div>
             <div className='flex items-center gap-2 mt-1'>
