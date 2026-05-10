@@ -3,10 +3,10 @@ import { POSITIONS, TEAM_COLORS } from './constants';
 import { teamAvg } from './teams';
 
 const COLOR_EMOJI: Record<string, string> = {
-  'כתום': '🟠',
-  'ירוק': '🟢',
-  'כחול': '🔵',
-  'סגול': '🟣',
+  כתום: '🟠',
+  ירוק: '🟢',
+  כחול: '🔵',
+  סגול: '🟣',
 };
 
 export function formatTeamsForWhatsApp(teams: Player[][]): string {
@@ -22,7 +22,7 @@ export function formatTeamsForWhatsApp(teams: Player[][]): string {
     });
     lines.push(`ממוצע: ${teamAvg(team).toFixed(1)}`);
   });
-  lines.push('\nהופק על ידי מחולל הקבוצות 🏀');
+  lines.push('\הופק ע"י HoopTeams🏀');
   return lines.join('\n');
 }
 
