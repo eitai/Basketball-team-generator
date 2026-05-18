@@ -2,9 +2,11 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
-    react(),
+    react({
+      babel: mode === 'production' ? { plugins: [] } : undefined,
+    }),
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {
@@ -71,4 +73,4 @@ export default defineConfig({
       },
     },
   },
-})
+}))
