@@ -2,11 +2,9 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
-export default defineConfig(({ mode }) => ({
+export default defineConfig({
   plugins: [
-    react({
-      babel: mode === 'production' ? { plugins: [] } : undefined,
-    }),
+    react(),
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {
@@ -66,7 +64,7 @@ export default defineConfig(({ mode }) => ({
   ],
   server: {
     port: 5173,
-    allowedHosts: 'all',
+    allowedHosts: true,
     proxy: {
       '/api': {
         target: process.env['VITE_API_TARGET'] ?? 'http://localhost:3001',
@@ -74,4 +72,4 @@ export default defineConfig(({ mode }) => ({
       },
     },
   },
-}));
+});
