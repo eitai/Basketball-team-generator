@@ -20,4 +20,30 @@ model Player {
   generalRating Int      @default(5)
   isGuest       Boolean  @default(false)
   createdAt     DateTime @default(now())
+  allowedPhone  AllowedPhone?
+}
+
+model AllowedPhone {
+  id        String   @id @default(cuid())
+  phone     String   @unique
+  name      String   @default("")
+  playerId  String?  @unique
+  player    Player?  @relation(fields: [playerId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+
+model Registration {
+  id           String   @id @default(cuid())
+  phone        String   @unique
+  displayName  String
+  registeredAt DateTime @default(now())
+}
+
+model GameSettings {
+  id         String    @id @default("singleton")
+  isOpen     Boolean   @default(false)
+  opensAt    DateTime?
+  maxPlayers Int       @default(18)
+  gameLabel  String    @default("")
 }

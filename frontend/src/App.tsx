@@ -17,6 +17,8 @@ import {
   ShieldCheck,
   Download,
   X,
+  ClipboardList,
+  Settings,
 } from 'lucide-react';
 import type { Player, PlayerDraft, Position } from './types/player';
 import { api } from './api/players';
@@ -26,6 +28,8 @@ import { shareOnWhatsApp } from './lib/share';
 import PlayerModal from './components/PlayerModal';
 import PlayerCard from './components/PlayerCard';
 import TeamCard from './components/TeamCard';
+import RegistrationTab from './components/RegistrationTab';
+import AdminRegistrationPanel from './components/AdminRegistrationPanel';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -53,7 +57,9 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
   });
   const [draggingPlayer, setDraggingPlayer] = useState<{ player: Player; fromTeamIdx: number } | null>(null);
   const [touchDragTargetIdx, setTouchDragTargetIdx] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<'roster' | 'registration' | 'admin-reg'>('roster');
   const [isAdmin, setIsAdmin] = useState(() => sessionStorage.getItem('isAdmin') === '1');
+  const [adminPassword, setAdminPassword] = useState(() => sessionStorage.getItem('adminPwd') ?? '');
   const [editingAsGuest, setEditingAsGuest] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<Event | null>(null);
   const [showIOSInstall, setShowIOSInstall] = useState(false);
@@ -221,7 +227,9 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
       const ok = await api.verifyAdmin(adminPasswordInput);
       if (ok) {
         sessionStorage.setItem('isAdmin', '1');
+        sessionStorage.setItem('adminPwd', adminPasswordInput);
         setIsAdmin(true);
+        setAdminPassword(adminPasswordInput);
         setShowAdminModal(false);
         setAdminPasswordInput('');
       }
@@ -234,7 +242,10 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
 
   const handleAdminLogout = () => {
     sessionStorage.removeItem('isAdmin');
+    sessionStorage.removeItem('adminPwd');
     setIsAdmin(false);
+    setAdminPassword('');
+    if (activeTab === 'admin-reg') setActiveTab('registration');
   };
 
   const filteredPlayers = useMemo(() => {
@@ -310,6 +321,48 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
             </div>
           </div>
         </header>
+
+        {/* Tab navigation */}
+        <div className='flex bg-stone-900 border border-stone-800 rounded-xl p-1 mb-6 gap-1'>
+          <button
+            onClick={() => setActiveTab('roster')}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-sm font-bold transition ${
+              activeTab === 'roster' ? 'bg-stone-700 text-stone-100' : 'text-stone-500 hover:text-stone-300'
+            }`}
+          >
+            <Users size={14} />
+            סגל
+          </button>
+          <button
+            onClick={() => setActiveTab('registration')}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-sm font-bold transition ${
+              activeTab === 'registration' ? 'bg-orange-500 text-white' : 'text-stone-500 hover:text-stone-300'
+            }`}
+          >
+            <ClipboardList size={14} />
+            הרשמה
+          </button>
+          {isAdmin && (
+            <button
+              onClick={() => setActiveTab('admin-reg')}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-sm font-bold transition ${
+                activeTab === 'admin-reg' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'text-stone-500 hover:text-stone-300'
+              }`}
+            >
+              <Settings size={14} />
+              ניהול
+            </button>
+          )}
+        </div>
+
+        {/* Registration tab */}
+        {activeTab === 'registration' && <RegistrationTab />}
+
+        {/* Admin registration panel */}
+        {activeTab === 'admin-reg' && isAdmin && <AdminRegistrationPanel adminPassword={adminPassword} />}
+
+        {/* Roster tab */}
+        {activeTab === 'roster' && <>
 
         <div className='bg-gradient-to-l from-stone-900 to-stone-900/50 border border-stone-800 rounded-2xl p-4 mb-6'>
           <div className='flex flex-wrap items-center gap-3 md:gap-4'>
@@ -561,6 +614,8 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
         <footer className='text-center text-xs text-stone-600 mt-12 pb-4'>
           <p>לחץ על שחקן לסימון נוכחות · אייקון העיפרון לעריכה · נשמר אוטומטית</p>
         </footer>
+
+        </> /* end roster tab */}
       </div>
 
       {editing && (
