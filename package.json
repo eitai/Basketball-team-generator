@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "npm install --prefix backend && npm install --prefix frontend && npm run --prefix backend db:deploy && concurrently --names \"API,WEB\" --prefix-colors \"cyan,magenta\" \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
-    "start": "npm install --prefix backend && npm install --prefix frontend && npm run --prefix backend db:deploy && npm run --prefix frontend build && npm run --prefix backend build && npm start --prefix backend"
+    "build": "npm install --prefix backend && npm install --prefix frontend && npm run --prefix backend db:deploy && NODE_ENV=production npm run --prefix frontend build && npm run --prefix backend build",
+    "start": "npm start --prefix backend"
   },
   "keywords": [],
   "author": "",
