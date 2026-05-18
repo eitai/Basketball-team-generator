@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 import playerRoutes from './routes/players';
 import authRoutes from './routes/auth';
 import registrationRoutes from './routes/registration';
+import exportRoutes from './routes/exportData';
 import { prisma } from './lib/prisma';
 
 dotenv.config();
@@ -22,6 +23,7 @@ app.use(express.json());
 app.use('/api/players', playerRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/registration', registrationRoutes);
+app.use('/api/export', exportRoutes);
 
 if (isProd) {
   const frontendDist = path.resolve(__dirname, '../../frontend/dist');
