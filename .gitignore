@@ -11,3 +11,4 @@ dist/
 *.db-wal
 *.db-shm
 whatsapp-export/
+prod-export.json
