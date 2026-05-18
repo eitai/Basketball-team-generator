@@ -69,7 +69,7 @@ export default defineConfig(({ mode }) => ({
     allowedHosts: 'all',
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: process.env['VITE_API_TARGET'] ?? 'http://localhost:3001',
         changeOrigin: true,
       },
     },
