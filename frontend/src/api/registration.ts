@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from './client';
 import type { RegistrationState, AllowedPhone, RegisterResult, GameSettings } from '../types/registration';
 
 const BASE = '/api/registration';

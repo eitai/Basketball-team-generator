@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from './client';
 import type { Player, PlayerDraft } from '../types/player';
 
 const BASE = '/api/players';
