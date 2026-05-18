@@ -32,9 +32,89 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
   const [addingPhone, setAddingPhone] = useState(false);
   const [addError, setAddError] = useState('');
 
+  // One-time import
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{ added: number; updated: number; invalid: string[] } | null>(null);
+
   // Confirm clear
   const [confirmClear, setConfirmClear] = useState(false);
   const [clearing, setClearing] = useState(false);
+
+  const CONTACTS = `אבי: 0502122702
+אביב סמון: 0509922348
+אביב פורטל: 0502221683
+אביב קזז: 0504203313
+אבירם: 0544605155
+אופרי: 0537507707
+אורון: 0506136396
+אורי בונה: 0526868153
+אוריאה אדרי: 0522667334
+אורן כהן: 0504058011
+איתי: 0547824858
+איתי חבר של קורל: 0549308299
+אמיר: 0525012411
+בן לוינסון: 0533324307
+גיא נחום: 0502799570
+גלעד כהן: 0526758515
+דובו: 0527568838
+דוד בל: 0547709400
+דורון ביטון: 0506779486
+דן: 0529469648
+דני: 0522419300
+זאג כדורסל גבעת אבני: 0529203040
+חן מזור: 0504068100
+חן ענבי: 0502588450
+יגור ויינר: 0546962809
+יהב: 0547520811
+יהב ביטון: 0509181839
+יהונתן: 0559423852
+יהורם: 0542127288
+יהלי: 0527712044
+ירון: 0505500145
+ירון בונה כדורסל: 0523491017
+ירין תורגמן: 0502336202
+כפיר סמון: 0507311042
+ליאור בר שלום: 0549996692
+מורן: 0524043156
+ממן יוסי: 0502656665
+מעיין סמון: 0507310802
+מתן סמגה: 0506213856
+נאור ביטון: 0509777468
+נועם כדורסל גבעת אבני: 0507896264
+עדן פלנסיה: 0502809266
+עוז גינו: 0529463601
+עידן: 0506969312
+עמית: 0525958209
+עמית וינגארד: 0543098529
+עמית כהן: 0556676301
+רועי סיבור: 0507766489
+רז ביטון: 0586779486
+שלומי אלבז: 0548103664
+שלומי ויזל: 0507295785
+שלומי מזרחי: 0508452676
+שמעון: 0507783744
+תום ביכמן: 0549475947
+0505478081
+0543996554
+0535858508
+0502031014
+0543948509
+0504988240
+0525677781
+0586285584
+0507722258`;
+
+  const handleOneTimeImport = async () => {
+    setImporting(true);
+    setImportResult(null);
+    try {
+      const result = await registrationApi.bulkImport(adminPassword, CONTACTS);
+      setImportResult(result);
+      await load();
+    } finally {
+      setImporting(false);
+    }
+  };
 
   const load = useCallback(async () => {
     try {
@@ -272,6 +352,29 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
           <div className="px-4 py-8 text-center text-stone-600 text-sm">עדיין אין נרשמים</div>
         )}
       </div>
+
+      {/* One-time import button */}
+      {allowedPhones.length === 0 && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-black text-amber-300">ייבוא חד-פעמי של חברי הקבוצה</p>
+            <p className="text-xs text-stone-400 mt-0.5">63 חברים — לאחר הייבוא מחק את הכפתור</p>
+          </div>
+          <div className="flex items-center gap-3">
+            {importResult && (
+              <span className="text-xs text-emerald-400 font-bold">+{importResult.added} נוספו</span>
+            )}
+            <button
+              onClick={handleOneTimeImport}
+              disabled={importing}
+              className="bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-stone-900 font-black px-4 py-2 rounded-lg text-sm flex items-center gap-1.5 transition shrink-0"
+            >
+              {importing ? <Loader2 size={14} className="animate-spin" /> : null}
+              ייבא עכשיו
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Allowed phones */}
       <div className="bg-stone-900 border border-stone-800 rounded-2xl overflow-hidden">
