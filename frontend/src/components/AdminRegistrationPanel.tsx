@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Settings, Users, Phone, Plus, Trash2, CheckCircle2, Clock,
-  Loader2, X, Link, Unlink
+  Loader2, X, Link, Unlink, ChevronDown, ChevronUp, AlertCircle
 } from 'lucide-react';
 import { registrationApi } from '../api/registration';
 import { api as playerApi } from '../api/players';
@@ -31,6 +31,12 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
   const [newName, setNewName] = useState('');
   const [addingPhone, setAddingPhone] = useState(false);
   const [addError, setAddError] = useState('');
+
+  // Bulk import
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkText, setBulkText] = useState('');
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [bulkResult, setBulkResult] = useState<{ added: number; updated: number; invalid: string[] } | null>(null);
 
   // Confirm clear
   const [confirmClear, setConfirmClear] = useState(false);
@@ -112,6 +118,20 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
   const handleRemoveRegistration = async (id: string) => {
     await registrationApi.removeRegistration(adminPassword, id);
     setState(prev => prev ? { ...prev, registrations: prev.registrations.filter(r => r.id !== id) } : prev);
+  };
+
+  const handleBulkImport = async () => {
+    if (!bulkText.trim()) return;
+    setBulkLoading(true);
+    setBulkResult(null);
+    try {
+      const result = await registrationApi.bulkImport(adminPassword, bulkText);
+      setBulkResult(result);
+      setBulkText('');
+      await load();
+    } finally {
+      setBulkLoading(false);
+    }
   };
 
   const handleClearAll = async () => {
@@ -308,6 +328,51 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
             </button>
           </div>
           {addError && <p className="text-rose-400 text-xs mt-1">{addError}</p>}
+        </div>
+
+        {/* Bulk import */}
+        <div className="border-b border-stone-800">
+          <button
+            onClick={() => { setBulkOpen(v => !v); setBulkResult(null); }}
+            className="w-full flex items-center justify-between px-4 py-3 text-sm font-bold text-stone-400 hover:text-stone-200 transition"
+          >
+            <span>ייבוא מרובה</span>
+            {bulkOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </button>
+          {bulkOpen && (
+            <div className="px-4 pb-4 space-y-2">
+              <p className="text-xs text-stone-500">שורה לכל חבר: <span dir="ltr" className="font-mono">שם: 0501234567</span> או <span dir="ltr" className="font-mono">0501234567</span></p>
+              <textarea
+                value={bulkText}
+                onChange={e => { setBulkText(e.target.value); setBulkResult(null); }}
+                rows={5}
+                dir="ltr"
+                placeholder={'ישראל ישראלי: 0501234567\nשרה כהן: 0521234567'}
+                className="w-full bg-stone-950 border border-stone-700 rounded-lg px-3 py-2 text-sm text-stone-100 placeholder-stone-600 font-mono focus:outline-none focus:border-orange-500/60 transition resize-none"
+              />
+              {bulkResult && (
+                <div className="space-y-1">
+                  <p className="text-xs text-emerald-400 font-bold">
+                    נוספו {bulkResult.added} · עודכנו {bulkResult.updated}
+                  </p>
+                  {bulkResult.invalid.length > 0 && (
+                    <div className="flex items-start gap-1.5">
+                      <AlertCircle size={12} className="text-rose-400 mt-0.5 shrink-0" />
+                      <p className="text-xs text-rose-400">לא תקינים: {bulkResult.invalid.join(', ')}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+              <button
+                onClick={handleBulkImport}
+                disabled={bulkLoading || !bulkText.trim()}
+                className="bg-orange-500 hover:bg-orange-400 disabled:opacity-50 text-white font-black px-4 py-2 rounded-lg text-sm flex items-center gap-1.5 transition"
+              >
+                {bulkLoading ? <Loader2 size={14} className="animate-spin" /> : null}
+                ייבא
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Phones list */}
