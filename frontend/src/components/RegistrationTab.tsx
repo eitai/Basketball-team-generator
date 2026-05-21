@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Phone, CheckCircle2, Clock, Lock, RefreshCw, LogOut, Loader2, Users, UserCheck, Share2 } from 'lucide-react';
+import { Phone, CheckCircle2, Clock, Lock, RefreshCw, LogOut, Loader2, Users, Share2 } from 'lucide-react';
 import { registrationApi } from '../api/registration';
 import type { RegistrationState, RegisterResult } from '../types/registration';
 
@@ -257,43 +257,6 @@ export default function RegistrationTab() {
         </div>
       )}
 
-      {/* Group members — only visible once someone has registered */}
-      {state.members.length > 0 && state.registrations.length > 0 && (
-        <div className="bg-stone-900 border border-stone-800 rounded-2xl overflow-hidden">
-          <div className="flex items-center gap-2 px-4 py-3 border-b border-stone-800">
-            <UserCheck size={15} className="text-stone-400" />
-            <span className="text-sm font-black text-stone-300">חברי הקבוצה</span>
-            <span className="text-xs font-bold text-stone-600 bg-stone-800 px-1.5 py-0.5 rounded tabular-nums">{state.members.length}</span>
-          </div>
-          <div className="p-3 grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-            {state.members.map((m, i) => {
-              const isConfirmed = registeredNames.has(m.name) && !waitlistNames.has(m.name);
-              const isWaitlist = waitlistNames.has(m.name);
-              return (
-                <div
-                  key={i}
-                  className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-bold ${
-                    isConfirmed
-                      ? 'bg-emerald-500/10 border border-emerald-500/25 text-emerald-300'
-                      : isWaitlist
-                      ? 'bg-amber-500/10 border border-amber-500/25 text-amber-400'
-                      : 'bg-stone-800/50 border border-stone-700/50 text-stone-500'
-                  }`}
-                >
-                  {isConfirmed ? (
-                    <CheckCircle2 size={11} className="text-emerald-400 shrink-0" />
-                  ) : isWaitlist ? (
-                    <Clock size={11} className="text-amber-400 shrink-0" />
-                  ) : (
-                    <div className="w-1.5 h-1.5 rounded-full bg-stone-600 shrink-0" />
-                  )}
-                  <span className="truncate">{m.name}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

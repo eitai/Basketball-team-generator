@@ -10,15 +10,16 @@ interface Props {
   onClose: () => void;
   onDelete: (id: string) => void;
   defaultIsGuest?: boolean;
+  defaultName?: string;
 }
 
 type DraftState = PlayerDraft & { id?: string };
 
-export default function PlayerModal({ player, onSave, onClose, onDelete, defaultIsGuest = false }: Props) {
+export default function PlayerModal({ player, onSave, onClose, onDelete, defaultIsGuest = false, defaultName = '' }: Props) {
   const [draft, setDraft] = useState<DraftState>(
     player
       ? { ...player, ballHandler: player.ballHandler ?? false, generalRating: player.generalRating ?? 5, isGuest: player.isGuest ?? false }
-      : { name: '', position: 'guard', defense: 5, offense: 5, shooting: 5, passing: 5, rebounding: 5, fitness: 5, ballHandler: false, generalRating: 5, isGuest: defaultIsGuest }
+      : { name: defaultName, position: 'guard', defense: 5, offense: 5, shooting: 5, passing: 5, rebounding: 5, fitness: 5, ballHandler: false, generalRating: 5, isGuest: defaultIsGuest }
   );
   const overall = computeOverall(draft as Player);
   const isValid = draft.name.trim().length > 0;

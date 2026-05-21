@@ -59,6 +59,7 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
 
   // Edit player (from allowed phones)
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
+  const [editingPhoneId, setEditingPhoneId] = useState<string | null>(null); // phone to auto-link after new player create
 
   const load = useCallback(async () => {
     try {
@@ -200,10 +201,17 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
   };
 
   const handleSaveEditedPlayer = async (data: Player | PlayerDraft) => {
-    if (!editingPlayer) return;
-    await playerApi.update(editingPlayer.id, data as Partial<PlayerDraft>);
+    if (editingPlayer) {
+      await playerApi.update(editingPlayer.id, data as Partial<PlayerDraft>);
+    } else {
+      const created = await playerApi.create(data as PlayerDraft);
+      if (editingPhoneId) {
+        await registrationApi.linkPhoneToPlayer(adminPassword, editingPhoneId, created.id);
+      }
+    }
     await load();
     setEditingPlayer(null);
+    setEditingPhoneId(null);
   };
 
   if (loading) {
@@ -552,26 +560,31 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
               </div>
               {/* Player link dropdown */}
               <div className="flex items-center gap-2 flex-wrap">
-                {p.player
-                  ? (
-                    <div className="flex items-center gap-1">
-                      <span className="inline-flex items-center gap-1 text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2 py-0.5">
-                        <Link size={10} />{p.player.name}
-                      </span>
-                      <button
-                        onClick={() => {
-                          const fullPlayer = players.find(pl => pl.id === p.player!.id);
-                          if (fullPlayer) setEditingPlayer(fullPlayer);
-                        }}
-                        className="text-stone-500 hover:text-orange-400 transition p-0.5 min-h-[28px] min-w-[28px] flex items-center justify-center"
-                        title="ערוך שחקן"
-                      >
-                        <Pencil size={12} />
-                      </button>
-                    </div>
-                  )
-                  : <span className="text-xs text-stone-600 italic">לא משוייך לשחקן</span>
-                }
+                {p.player ? (
+                  <div className="flex items-center gap-1">
+                    <span className="inline-flex items-center gap-1 text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2 py-0.5">
+                      <Link size={10} />{p.player.name}
+                    </span>
+                    <button
+                      onClick={() => {
+                        const fullPlayer = players.find(pl => pl.id === p.player!.id);
+                        if (fullPlayer) { setEditingPlayer(fullPlayer); setEditingPhoneId(null); }
+                      }}
+                      className="text-stone-500 hover:text-orange-400 transition p-0.5 min-h-[28px] min-w-[28px] flex items-center justify-center"
+                      title="ערוך שחקן"
+                    >
+                      <Pencil size={12} />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => { setEditingPlayer(null); setEditingPhoneId(p.id); }}
+                    className="inline-flex items-center gap-1 text-xs text-stone-500 hover:text-orange-400 bg-stone-800 hover:bg-stone-700 border border-stone-700 rounded-full px-2 py-0.5 transition"
+                    title="צור פרופיל שחקן"
+                  >
+                    <Pencil size={10} />צור פרופיל
+                  </button>
+                )}
                 <select
                   value={p.playerId ?? ''}
                   onChange={e => handleLinkPlayer(p.id, e.target.value || null)}
@@ -614,13 +627,14 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
         </div>
       )}
 
-      {/* Edit player modal */}
-      {editingPlayer && (
+      {/* Edit/create player modal */}
+      {(editingPlayer || editingPhoneId) && (
         <PlayerModal
           player={editingPlayer}
+          defaultName={!editingPlayer ? (allowedPhones.find(p => p.id === editingPhoneId)?.name ?? '') : undefined}
           onSave={handleSaveEditedPlayer}
-          onClose={() => setEditingPlayer(null)}
-          onDelete={() => setEditingPlayer(null)}
+          onClose={() => { setEditingPlayer(null); setEditingPhoneId(null); }}
+          onDelete={() => { setEditingPlayer(null); setEditingPhoneId(null); }}
         />
       )}
     </div>
