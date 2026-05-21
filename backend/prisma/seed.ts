@@ -1,11 +1,7 @@
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
-import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 
-const url = process.env['DATABASE_URL'] ?? 'file:./dev.db';
-const adapter = new PrismaBetterSqlite3({ url });
-
-const prisma = new PrismaClient({ adapter });
+const prisma = new PrismaClient();
 
 const players = [
   { name: 'איתי מאיר', position: 'center', defense: 9, offense: 7, shooting: 9, passing: 8, rebounding: 7, fitness: 3, ballHandler: false },

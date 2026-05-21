@@ -1,12 +1,9 @@
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
-import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const url = process.env['DATABASE_URL'] ?? 'file:./dev.db';
-const adapter = new PrismaBetterSqlite3({ url });
-const prisma = new PrismaClient({ adapter });
+const prisma = new PrismaClient();
 
 async function main() {
   const exportPath = path.resolve(__dirname, '../../prod-export.json');
