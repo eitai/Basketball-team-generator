@@ -67,7 +67,7 @@ async function seedIfEmpty() {
 
 async function main() {
   await prisma.$connect();
-  console.log('Connected to SQLite');
+  console.log('Connected to PostgreSQL');
   await seedIfEmpty();
   app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
 }

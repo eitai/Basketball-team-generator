@@ -1,9 +1,10 @@
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 
-const adapter = new PrismaPg({ connectionString: process.env['DATABASE_URL']! });
-const prisma = new PrismaClient({ adapter });
+const pool = new Pool({ connectionString: process.env['DATABASE_URL']!, ssl: { rejectUnauthorized: false } });
+const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
 
 const players = [
   { name: 'איתי מאיר', position: 'center', defense: 9, offense: 7, shooting: 9, passing: 8, rebounding: 7, fitness: 3, ballHandler: false },
