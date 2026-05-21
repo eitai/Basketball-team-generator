@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Phone, CheckCircle2, Clock, Lock, RefreshCw, LogOut, Loader2, Users, UserCheck } from 'lucide-react';
+import { Phone, CheckCircle2, Clock, Lock, RefreshCw, LogOut, Loader2, Users, UserCheck, Share2 } from 'lucide-react';
 import { registrationApi } from '../api/registration';
 import type { RegistrationState, RegisterResult } from '../types/registration';
 
@@ -89,12 +89,23 @@ export default function RegistrationTab() {
             <h2 className="text-xl font-black text-stone-100">
               {state.gameLabel || 'הרשמה למשחק'}
             </h2>
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
               {state.isOpen ? (
-                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-2.5 py-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  הרשמה פתוחה
-                </span>
+                <>
+                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-2.5 py-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    הרשמה פתוחה
+                  </span>
+                  <a
+                    href={`https://wa.me/?text=${encodeURIComponent(`📣 ההרשמה פתוחה${state.gameLabel ? ` ל${state.gameLabel}` : ''}!\nלהרשמה: ${window.location.href}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-300 bg-emerald-600/15 border border-emerald-600/30 hover:bg-emerald-600/25 rounded-full px-2.5 py-1 transition min-h-[28px]"
+                  >
+                    <Share2 size={11} />
+                    שתף בוואטסאפ
+                  </a>
+                </>
               ) : state.opensAt ? (
                 <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 rounded-full px-2.5 py-1">
                   <Clock size={11} />
@@ -246,8 +257,8 @@ export default function RegistrationTab() {
         </div>
       )}
 
-      {/* Group members */}
-      {state.members.length > 0 && (
+      {/* Group members — only visible once someone has registered */}
+      {state.members.length > 0 && state.registrations.length > 0 && (
         <div className="bg-stone-900 border border-stone-800 rounded-2xl overflow-hidden">
           <div className="flex items-center gap-2 px-4 py-3 border-b border-stone-800">
             <UserCheck size={15} className="text-stone-400" />

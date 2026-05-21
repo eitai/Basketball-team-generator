@@ -48,4 +48,10 @@ export const registrationApi = {
 
   linkPhoneToPlayer: (password: string, phoneId: string, playerId: string | null) =>
     axios.put<AllowedPhone>(`${BASE}/allowed-phones/${phoneId}/link`, { playerId }, { headers: adminHeaders(password) }).then(r => r.data),
+
+  adminRegister: (password: string, phone: string, name: string) =>
+    axios.post<RegisterResult>(`${BASE}/admin-register`, { phone, name }, { headers: adminHeaders(password) }).then(r => r.data),
+
+  markPlayerAttending: (password: string, playerId: string) =>
+    axios.post<RegisterResult>(`${BASE}/mark-player`, { playerId }, { headers: adminHeaders(password) }).then(r => r.data),
 };

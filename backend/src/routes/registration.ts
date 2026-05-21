@@ -216,6 +216,57 @@ router.delete('/allowed-phones/:id', adminAuth, async (req, res) => {
   res.status(204).end();
 });
 
+// POST /api/registration/admin-register — admin: register someone directly (bypasses isOpen)
+router.post('/admin-register', adminAuth, async (req, res) => {
+  const { phone, name } = req.body as { phone?: string; name?: string };
+  if (!phone) { res.status(400).json({ error: 'נדרש מספר טלפון' }); return; }
+  if (!name?.trim()) { res.status(400).json({ error: 'נדרש שם' }); return; }
+
+  const normalized = normalizePhone(phone);
+  if (!normalized) { res.status(400).json({ error: 'מספר טלפון לא תקין' }); return; }
+
+  const settings = await getOrCreateSettings();
+
+  const existing = await prisma.registration.findUnique({ where: { phone: normalized } });
+  if (existing) {
+    const position = await prisma.registration.count({ where: { registeredAt: { lte: existing.registeredAt } } });
+    const status = position <= settings.maxPlayers ? 'confirmed' : 'waitlist';
+    res.json({ alreadyRegistered: true, displayName: existing.displayName, position, status });
+    return;
+  }
+
+  const registration = await prisma.registration.create({ data: { phone: normalized, displayName: name.trim() } });
+  const position = await prisma.registration.count();
+  const status = position <= settings.maxPlayers ? 'confirmed' : 'waitlist';
+  res.status(201).json({ alreadyRegistered: false, displayName: registration.displayName, position, status });
+});
+
+// POST /api/registration/mark-player — admin: mark an existing player as attending (no phone needed)
+router.post('/mark-player', adminAuth, async (req, res) => {
+  const { playerId } = req.body as { playerId?: string };
+  if (!playerId) { res.status(400).json({ error: 'נדרש מזהה שחקן' }); return; }
+
+  const player = await prisma.player.findUnique({ where: { id: playerId } });
+  if (!player) { res.status(404).json({ error: 'שחקן לא נמצא' }); return; }
+
+  const settings = await getOrCreateSettings();
+  // Use a synthetic phone that can't conflict with real numbers
+  const syntheticPhone = `player:${playerId}`;
+
+  const existing = await prisma.registration.findUnique({ where: { phone: syntheticPhone } });
+  if (existing) {
+    const position = await prisma.registration.count({ where: { registeredAt: { lte: existing.registeredAt } } });
+    const status = position <= settings.maxPlayers ? 'confirmed' : 'waitlist';
+    res.json({ alreadyRegistered: true, displayName: existing.displayName, position, status });
+    return;
+  }
+
+  const registration = await prisma.registration.create({ data: { phone: syntheticPhone, displayName: player.name } });
+  const position = await prisma.registration.count();
+  const status = position <= settings.maxPlayers ? 'confirmed' : 'waitlist';
+  res.status(201).json({ alreadyRegistered: false, displayName: registration.displayName, position, status });
+});
+
 // DELETE /api/registration/:id — admin (remove a registration by id)
 router.delete('/:id', adminAuth, async (req, res) => {
   await prisma.registration.delete({ where: { id: req.params['id'] } });

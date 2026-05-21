@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Settings, Users, Phone, Plus, Trash2, CheckCircle2, Clock,
-  Loader2, X, Link, Unlink, ChevronDown, ChevronUp, AlertCircle
+  Loader2, X, Link, Unlink, ChevronDown, ChevronUp, AlertCircle,
+  Pencil, UserPlus
 } from 'lucide-react';
 import { registrationApi } from '../api/registration';
 import { api as playerApi } from '../api/players';
+import PlayerModal from './PlayerModal';
 import type { RegistrationState, AllowedPhone, RegistrationEntry } from '../types/registration';
-import type { Player } from '../types/player';
+import type { Player, PlayerDraft } from '../types/player';
 
 interface Props {
   adminPassword: string;
@@ -42,6 +44,21 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
   const [confirmClear, setConfirmClear] = useState(false);
   const [clearing, setClearing] = useState(false);
 
+  // Admin register
+  const [adminRegOpen, setAdminRegOpen] = useState(false);
+  const [adminRegPhone, setAdminRegPhone] = useState('');
+  const [adminRegName, setAdminRegName] = useState('');
+  const [adminRegLoading, setAdminRegLoading] = useState(false);
+  const [adminRegResult, setAdminRegResult] = useState<{ alreadyRegistered: boolean; displayName: string; position: number; status: 'confirmed' | 'waitlist' } | null>(null);
+  const [adminRegError, setAdminRegError] = useState('');
+
+  // Mark player attending
+  const [markPlayerId, setMarkPlayerId] = useState('');
+  const [markingPlayer, setMarkingPlayer] = useState(false);
+  const [markPlayerResult, setMarkPlayerResult] = useState<string | null>(null);
+
+  // Edit player (from allowed phones)
+  const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -145,6 +162,50 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
     }
   };
 
+  const handleAdminRegister = async () => {
+    if (!adminRegPhone.trim() || !adminRegName.trim()) { setAdminRegError('נדרשים שם ומספר טלפון'); return; }
+    setAdminRegLoading(true);
+    setAdminRegError('');
+    setAdminRegResult(null);
+    try {
+      const result = await registrationApi.adminRegister(adminPassword, adminRegPhone.trim(), adminRegName.trim());
+      setAdminRegResult(result);
+      setAdminRegPhone('');
+      setAdminRegName('');
+      await load();
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'שגיאה';
+      setAdminRegError(msg);
+    } finally {
+      setAdminRegLoading(false);
+    }
+  };
+
+  const handleMarkPlayer = async () => {
+    if (!markPlayerId) return;
+    setMarkingPlayer(true);
+    setMarkPlayerResult(null);
+    try {
+      const result = await registrationApi.markPlayerAttending(adminPassword, markPlayerId);
+      const label = result.alreadyRegistered ? `כבר רשום (מקום #${result.position})` : `נוסף! מקום #${result.position}`;
+      setMarkPlayerResult(`${result.displayName} — ${label}`);
+      setMarkPlayerId('');
+      await load();
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'שגיאה';
+      setMarkPlayerResult(`שגיאה: ${msg}`);
+    } finally {
+      setMarkingPlayer(false);
+    }
+  };
+
+  const handleSaveEditedPlayer = async (data: Player | PlayerDraft) => {
+    if (!editingPlayer) return;
+    await playerApi.update(editingPlayer.id, data as Partial<PlayerDraft>);
+    await load();
+    setEditingPlayer(null);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center py-20">
@@ -236,16 +297,110 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
             <Users size={16} className="text-orange-400" />
             רשימת נרשמים ({state?.registrations.length ?? 0})
           </h3>
-          {(state?.registrations.length ?? 0) > 0 && (
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => setConfirmClear(true)}
-              className="text-xs text-stone-600 hover:text-rose-400 font-bold flex items-center gap-1 transition"
+              onClick={() => { setAdminRegOpen(v => !v); setAdminRegResult(null); setAdminRegError(''); }}
+              className="text-xs font-bold flex items-center gap-1 text-stone-400 hover:text-emerald-300 transition min-h-[32px] px-1"
             >
-              <Trash2 size={12} />
-              נקה הכל
+              <UserPlus size={13} />
+              הרשמה ידנית
+              {adminRegOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
             </button>
-          )}
+            {(state?.registrations.length ?? 0) > 0 && (
+              <button
+                onClick={() => setConfirmClear(true)}
+                className="text-xs text-stone-600 hover:text-rose-400 font-bold flex items-center gap-1 transition min-h-[32px] px-1"
+              >
+                <Trash2 size={12} />
+                נקה הכל
+              </button>
+            )}
+          </div>
         </div>
+
+        {/* Admin manual registration */}
+        {adminRegOpen && (
+          <div className="px-4 py-3 border-b border-stone-800 bg-stone-950/50 space-y-2">
+            <div className="flex gap-2">
+              <input
+                value={adminRegName}
+                onChange={e => { setAdminRegName(e.target.value); setAdminRegError(''); setAdminRegResult(null); }}
+                onKeyDown={e => { if (e.key === 'Enter') handleAdminRegister(); }}
+                placeholder="שם"
+                className="flex-1 bg-stone-900 border border-stone-700 rounded-lg px-3 py-2.5 text-sm text-stone-100 placeholder-stone-600 focus:outline-none focus:border-orange-500/60 transition min-h-[44px]"
+              />
+              <input
+                value={adminRegPhone}
+                onChange={e => { setAdminRegPhone(e.target.value); setAdminRegError(''); setAdminRegResult(null); }}
+                onKeyDown={e => { if (e.key === 'Enter') handleAdminRegister(); }}
+                placeholder="0501234567"
+                dir="ltr"
+                className="w-36 bg-stone-900 border border-stone-700 rounded-lg px-3 py-2.5 text-sm text-stone-100 placeholder-stone-600 focus:outline-none focus:border-orange-500/60 transition min-h-[44px]"
+              />
+              <button
+                onClick={handleAdminRegister}
+                disabled={adminRegLoading}
+                className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-black px-3 py-2.5 rounded-lg transition flex items-center gap-1 shrink-0 min-h-[44px] text-sm"
+              >
+                {adminRegLoading ? <Loader2 size={14} className="animate-spin" /> : <UserPlus size={14} />}
+                <span className="hidden sm:inline">הרשם</span>
+              </button>
+            </div>
+            {adminRegError && (
+              <p className="text-rose-400 text-xs">{adminRegError}</p>
+            )}
+            {adminRegResult && (
+              <div className={`flex items-center gap-2 text-xs font-bold rounded-lg px-3 py-2 ${
+                adminRegResult.status === 'confirmed'
+                  ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20'
+                  : 'bg-amber-500/10 text-amber-300 border border-amber-500/20'
+              }`}>
+                {adminRegResult.status === 'confirmed' ? <CheckCircle2 size={13} /> : <Clock size={13} />}
+                {adminRegResult.alreadyRegistered ? 'כבר רשום — ' : 'נרשם! — '}
+                {adminRegResult.displayName}
+                {' · '}
+                {adminRegResult.status === 'confirmed' ? 'מאושר' : 'המתנה'}
+                {' · מקום #'}{adminRegResult.position}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Mark player attending */}
+        {(() => {
+          const registeredNames = new Set((state?.registrations ?? []).map(r => r.displayName));
+          const unregisteredPlayers = players.filter(p => !p.isGuest && !registeredNames.has(p.name));
+          return (
+            <div className="px-4 py-3 border-b border-stone-800 bg-stone-950/30">
+              <p className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">סמן שחקן כמגיע</p>
+              <div className="flex gap-2">
+                <select
+                  value={markPlayerId}
+                  onChange={e => { setMarkPlayerId(e.target.value); setMarkPlayerResult(null); }}
+                  className="flex-1 bg-stone-950 border border-stone-700 rounded-lg px-3 py-2.5 text-sm text-stone-100 focus:outline-none focus:border-orange-500/60 transition min-h-[44px]"
+                >
+                  <option value="">— בחר שחקן</option>
+                  {unregisteredPlayers.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+                <button
+                  onClick={handleMarkPlayer}
+                  disabled={markingPlayer || !markPlayerId}
+                  className="bg-stone-700 hover:bg-stone-600 disabled:opacity-50 text-stone-100 font-black px-4 py-2.5 rounded-lg transition flex items-center gap-1.5 shrink-0 min-h-[44px] text-sm"
+                >
+                  {markingPlayer ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                  סמן כמגיע
+                </button>
+              </div>
+              {markPlayerResult && (
+                <p className={`text-xs mt-1.5 font-bold ${markPlayerResult.startsWith('שגיאה') ? 'text-rose-400' : 'text-emerald-400'}`}>
+                  {markPlayerResult.startsWith('שגיאה') ? markPlayerResult : `✓ ${markPlayerResult}`}
+                </p>
+              )}
+            </div>
+          );
+        })()}
 
         {confirmed.length > 0 && (
           <div>
@@ -259,7 +414,9 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
                 </div>
                 <CheckCircle2 size={13} className="text-emerald-500 shrink-0" />
                 <span className="text-sm font-bold text-stone-200 flex-1">{r.displayName}</span>
-                <span className="text-xs text-stone-600 tabular-nums">{r.phone}</span>
+                <span className="text-xs text-stone-600 tabular-nums">
+                  {r.phone?.startsWith('player:') ? 'מנהל' : r.phone}
+                </span>
                 <button onClick={() => handleRemoveRegistration(r.id)} className="text-stone-700 hover:text-rose-400 transition p-0.5">
                   <X size={14} />
                 </button>
@@ -280,7 +437,9 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
                 </div>
                 <Clock size={13} className="text-amber-500 shrink-0" />
                 <span className="text-sm font-bold text-stone-400 flex-1">{r.displayName}</span>
-                <span className="text-xs text-stone-600 tabular-nums">{r.phone}</span>
+                <span className="text-xs text-stone-600 tabular-nums">
+                  {r.phone?.startsWith('player:') ? 'מנהל' : r.phone}
+                </span>
                 <button onClick={() => handleRemoveRegistration(r.id)} className="text-stone-700 hover:text-rose-400 transition p-0.5">
                   <X size={14} />
                 </button>
@@ -392,11 +551,25 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
                 }
               </div>
               {/* Player link dropdown */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 {p.player
-                  ? <span className="inline-flex items-center gap-1 text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2 py-0.5">
-                      <Link size={10} />{p.player.name}
-                    </span>
+                  ? (
+                    <div className="flex items-center gap-1">
+                      <span className="inline-flex items-center gap-1 text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2 py-0.5">
+                        <Link size={10} />{p.player.name}
+                      </span>
+                      <button
+                        onClick={() => {
+                          const fullPlayer = players.find(pl => pl.id === p.player!.id);
+                          if (fullPlayer) setEditingPlayer(fullPlayer);
+                        }}
+                        className="text-stone-500 hover:text-orange-400 transition p-0.5 min-h-[28px] min-w-[28px] flex items-center justify-center"
+                        title="ערוך שחקן"
+                      >
+                        <Pencil size={12} />
+                      </button>
+                    </div>
+                  )
                   : <span className="text-xs text-stone-600 italic">לא משוייך לשחקן</span>
                 }
                 <select
@@ -439,6 +612,16 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Edit player modal */}
+      {editingPlayer && (
+        <PlayerModal
+          player={editingPlayer}
+          onSave={handleSaveEditedPlayer}
+          onClose={() => setEditingPlayer(null)}
+          onDelete={() => setEditingPlayer(null)}
+        />
       )}
     </div>
   );
