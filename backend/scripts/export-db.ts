@@ -3,7 +3,14 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 
-const pool = new Pool({ connectionString: process.env['DATABASE_URL']!, ssl: { rejectUnauthorized: false } });
+const dbUrl = (process.env['DATABASE_URL'] ?? '')
+  .replace('sslmode=require', 'sslmode=no-verify')
+  .replace('sslmode=verify-full', 'sslmode=no-verify')
+  .replace('sslmode=verify-ca', 'sslmode=no-verify');
+const pool = new Pool({
+  connectionString: dbUrl,
+  ssl: dbUrl.includes('sslmode=no-verify') ? { rejectUnauthorized: false } : false,
+});
 const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
 
 async function main() {
