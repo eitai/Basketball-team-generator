@@ -29,21 +29,30 @@ router.get('/', async (_req, res) => {
   const settings = await checkAutoOpen();
   const [registrations, allowedPhones] = await Promise.all([
     prisma.registration.findMany({ orderBy: { registeredAt: 'asc' } }),
-    prisma.allowedPhone.findMany({ orderBy: { name: 'asc' }, select: { name: true, phone: true } }),
+    prisma.allowedPhone.findMany({ orderBy: { name: 'asc' }, select: { name: true, phone: true, playerId: true } }),
   ]);
+  const phoneToPlayerId = new Map(
+    allowedPhones.filter(ap => ap.playerId).map(ap => [ap.phone, ap.playerId!])
+  );
   res.json({
     isOpen: settings.isOpen,
     opensAt: settings.opensAt,
     maxPlayers: settings.maxPlayers,
     gameLabel: settings.gameLabel,
-    registrations: registrations.map((r, i) => ({
-      id: r.id,
-      displayName: r.displayName,
-      phone: maskPhone(r.phone),
-      registeredAt: r.registeredAt,
-      status: i < settings.maxPlayers ? 'confirmed' : 'waitlist',
-      position: i + 1,
-    })),
+    registrations: registrations.map((r, i) => {
+      const playerId = r.phone.startsWith('player:')
+        ? r.phone.slice('player:'.length)
+        : (phoneToPlayerId.get(r.phone) ?? null);
+      return {
+        id: r.id,
+        displayName: r.displayName,
+        phone: maskPhone(r.phone),
+        registeredAt: r.registeredAt,
+        status: i < settings.maxPlayers ? 'confirmed' : 'waitlist',
+        position: i + 1,
+        playerId,
+      };
+    }),
     members: allowedPhones.map(m => ({ name: m.name || maskPhone(m.phone) })),
   });
 });

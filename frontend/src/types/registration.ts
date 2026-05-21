@@ -5,6 +5,7 @@ export interface RegistrationEntry {
   registeredAt: string;
   status: 'confirmed' | 'waitlist';
   position: number;
+  playerId: string | null;
 }
 
 export interface GameSettings {

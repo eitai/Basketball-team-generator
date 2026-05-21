@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   Users,
   Plus,
@@ -22,7 +22,8 @@ import {
 } from 'lucide-react';
 import type { Player, PlayerDraft, Position } from './types/player';
 import { api } from './api/players';
-import { TEAM_COLORS, ATTENDING_KEY, TEAMS_COUNT_KEY, LOCKED_KEY } from './lib/constants';
+import { registrationApi } from './api/registration';
+import { TEAM_COLORS, TEAMS_COUNT_KEY, LOCKED_KEY } from './lib/constants';
 import { computeOverall, teamSum, generateBalancedTeams } from './lib/teams';
 import { shareOnWhatsApp } from './lib/share';
 import PlayerModal from './components/PlayerModal';
@@ -39,6 +40,7 @@ interface BeforeInstallPromptEvent extends Event {
 export default function App() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [attending, setAttending] = useState<Set<string>>(new Set());
+  const [registeredPlayerIds, setRegisteredPlayerIds] = useState<Set<string>>(new Set());
   const [numTeams, setNumTeams] = useState(3);
   const [teams, setTeams] = useState<Player[][] | null>(null);
   const [editing, setEditing] = useState<Player | 'new' | null>(null);
@@ -79,18 +81,38 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
+  const syncRegistration = useCallback(async (players: Player[]) => {
+    try {
+      const regState = await registrationApi.getState();
+      const validIds = new Set(players.map(p => p.id));
+      const confirmedIds = new Set<string>();
+      for (const r of regState.registrations) {
+        if (r.status === 'confirmed' && r.playerId && validIds.has(r.playerId)) {
+          confirmedIds.add(r.playerId);
+        }
+      }
+      setRegisteredPlayerIds(confirmedIds);
+      setAttending(prev => {
+        // Add any newly registered players; preserve manual admin toggles
+        const next = new Set(prev);
+        confirmedIds.forEach(id => next.add(id));
+        // Remove players no longer registered
+        for (const id of next) {
+          if (!confirmedIds.has(id)) next.delete(id);
+        }
+        return next;
+      });
+    } catch {
+      // silent
+    }
+  }, []);
+
   useEffect(() => {
     (async () => {
       try {
         const fetched = await api.getAll();
         setPlayers(fetched);
-        const validIds = new Set(fetched.map(p => p.id));
-        const savedAttending = localStorage.getItem(ATTENDING_KEY);
-        if (savedAttending) {
-          const saved = new Set((JSON.parse(savedAttending) as string[]).filter(id => validIds.has(id)));
-          setAttending(saved);
-          localStorage.setItem(ATTENDING_KEY, JSON.stringify([...saved]));
-        }
+        await syncRegistration(fetched);
         const savedCount = localStorage.getItem(TEAMS_COUNT_KEY);
         if (savedCount) setNumTeams(parseInt(savedCount) || 3);
       } catch (e) {
@@ -99,11 +121,20 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [syncRegistration]);
+
+  // Refresh registered players when switching to roster tab
+  useEffect(() => {
+    if (activeTab === 'roster') {
+      api.getAll().then(fetched => {
+        setPlayers(fetched);
+        syncRegistration(fetched);
+      }).catch(() => {});
+    }
+  }, [activeTab, syncRegistration]);
 
   const persistAttending = (next: Set<string>) => {
     setAttending(next);
-    localStorage.setItem(ATTENDING_KEY, JSON.stringify([...next]));
   };
 
   const persistTeamsCount = (n: number) => {
@@ -249,7 +280,7 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
   };
 
   const filteredPlayers = useMemo(() => {
-    let result = players;
+    let result = players.filter(p => registeredPlayerIds.has(p.id));
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       result = result.filter((p) => p.name.toLowerCase().includes(q));
@@ -261,7 +292,7 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
       if (aAtt !== bAtt) return bAtt - aAtt;
       return computeOverall(b) - computeOverall(a);
     });
-  }, [players, search, filterPos, attending]);
+  }, [players, registeredPlayerIds, search, filterPos, attending]);
 
   const attendingCount = players.filter(p => attending.has(p.id)).length;
 
@@ -370,7 +401,7 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
               <UserCheck size={20} className='text-orange-400 self-center' />
               <div>
                 <span className='text-3xl font-black tabular-nums text-orange-400'>{attendingCount}</span>
-                <span className='text-sm text-stone-500 mr-1'>/ {players.length} שחקנים</span>
+                <span className='text-sm text-stone-500 mr-1'>/ {registeredPlayerIds.size} שחקנים</span>
               </div>
             </div>
             <div className='flex items-center gap-2 mr-auto'>
@@ -490,7 +521,7 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
             <h2 className='text-lg font-black flex items-center gap-2'>
               <Users size={18} className='text-stone-400' />
               סגל
-              <span className='text-xs font-bold text-stone-500 bg-stone-800 px-2 py-0.5 rounded tabular-nums'>{players.length}</span>
+              <span className='text-xs font-bold text-stone-500 bg-stone-800 px-2 py-0.5 rounded tabular-nums'>{registeredPlayerIds.size}</span>
             </h2>
             {isAdmin && (
               <div className='flex gap-2'>
@@ -570,24 +601,13 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
             </div>
           )}
 
-          {players.length === 0 ? (
+          {registeredPlayerIds.size === 0 ? (
             <div className='bg-stone-900/50 border-2 border-dashed border-stone-800 rounded-2xl p-12 text-center'>
-              <div className='text-5xl mb-3'>🏀</div>
-              <h3 className='text-xl font-black mb-1'>בנה את הסגל שלך</h3>
-              <p className='text-stone-400 text-sm mb-5'>
-                הוסף את כל השחקנים בקבוצה.
-                <br />
-                בכל פעם שתבוא לשחק תסמן רק מי שהגיע.
+              <div className='text-5xl mb-3'>📋</div>
+              <h3 className='text-xl font-black mb-1'>אין נרשמים להיום</h3>
+              <p className='text-stone-400 text-sm'>
+                כשהשחקנים יירשמו הם יופיעו כאן מסומנים כמגיעים
               </p>
-              {isAdmin && (
-                <button
-                  onClick={() => setEditing('new')}
-                  className='bg-orange-500 hover:bg-orange-400 text-white font-bold px-5 py-2.5 rounded-lg inline-flex items-center gap-2'
-                >
-                  <Plus size={16} />
-                  הוסף שחקן ראשון
-                </button>
-              )}
             </div>
           ) : filteredPlayers.length === 0 ? (
             <div className='bg-stone-900/50 border border-stone-800 rounded-xl p-8 text-center'>
