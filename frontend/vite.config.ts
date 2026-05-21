@@ -25,16 +25,6 @@ export default defineConfig({
               cacheableResponse: { statuses: [0, 200] },
             },
           },
-          {
-            urlPattern: /^\/api\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              networkTimeoutSeconds: 5,
-              expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
         ],
       },
       manifest: {
@@ -68,6 +58,15 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: process.env['VITE_API_TARGET'] ?? 'http://localhost:3001',
+        changeOrigin: true,
+      },
+    },
+  },
+  preview: {
+    allowedHosts: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
         changeOrigin: true,
       },
     },
