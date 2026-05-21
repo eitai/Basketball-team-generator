@@ -62,21 +62,23 @@ export default function PlayerCard({ player, attending, onToggle, onEdit, isAdmi
               )}
             </div>
           </div>
-          <div
-            className={`flex flex-col items-center justify-center w-10 h-10 rounded-lg shrink-0 font-black text-base tabular-nums transition ${
-              !attending
-                ? 'bg-stone-800/40 text-stone-500'
-                : overall >= 8
-                ? 'bg-orange-500/20 text-orange-300 border border-orange-500/40'
-                : overall >= 6
-                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                : overall >= 4
-                ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
-                : 'bg-stone-700/40 text-stone-400 border border-stone-700'
-            }`}
-          >
-            {overall}
-          </div>
+          {isAdmin && (
+            <div
+              className={`flex flex-col items-center justify-center w-10 h-10 rounded-lg shrink-0 font-black text-base tabular-nums transition ${
+                !attending
+                  ? 'bg-stone-800/40 text-stone-500'
+                  : overall >= 8
+                  ? 'bg-orange-500/20 text-orange-300 border border-orange-500/40'
+                  : overall >= 6
+                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                  : overall >= 4
+                  ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
+                  : 'bg-stone-700/40 text-stone-400 border border-stone-700'
+              }`}
+            >
+              {overall}
+            </div>
+          )}
         </div>
       </button>
     </div>

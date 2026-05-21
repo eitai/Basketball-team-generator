@@ -178,7 +178,17 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
       setPlayers((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
     } else {
       const created = await api.create(data);
-      setPlayers((prev) => [...prev, created]);
+      const updatedPlayers = [...players, created];
+      setPlayers(updatedPlayers);
+      // When creating from the roster tab, immediately mark as attending for today's game
+      if (activeTab === 'roster' && isAdmin) {
+        try {
+          await registrationApi.markPlayerAttending(adminPassword, created.id);
+          await syncRegistration(updatedPlayers);
+        } catch {
+          // silent — player was saved, they'll appear after next refresh
+        }
+      }
     }
     setTeams(null);
   };
