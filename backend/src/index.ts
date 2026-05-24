@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
+import { execSync } from 'child_process';
 import playerRoutes from './routes/players';
 import authRoutes from './routes/auth';
 import registrationRoutes from './routes/registration';
@@ -66,6 +67,11 @@ async function seedIfEmpty() {
 }
 
 async function main() {
+  try {
+    execSync('npx prisma migrate deploy', { stdio: 'inherit' });
+  } catch (err) {
+    console.warn('Migration step failed, continuing with existing schema:', err);
+  }
   await prisma.$connect();
   console.log('Connected to PostgreSQL');
   await seedIfEmpty();
