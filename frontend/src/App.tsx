@@ -179,7 +179,7 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
     });
   };
 
-  const handleSave = async (data: Player | PlayerDraft) => {
+  const handleSave = async (data: Player | PlayerDraft, phone?: string) => {
     if ('id' in data) {
       const updated = await api.update(data.id, data);
       setPlayers((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
@@ -187,13 +187,20 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
       const created = await api.create(data);
       const updatedPlayers = [...players, created];
       setPlayers(updatedPlayers);
-      // When creating from the roster tab, immediately mark as attending for today's game
       if (activeTab === 'roster' && isAdmin) {
         try {
           await registrationApi.markPlayerAttending(adminPassword, created.id);
           await syncRegistration(updatedPlayers);
         } catch {
-          // silent — player was saved, they'll appear after next refresh
+          // silent
+        }
+        if (phone && !(data as PlayerDraft).isGuest) {
+          try {
+            const allowedPhone = await registrationApi.addAllowedPhone(adminPassword, phone, (data as PlayerDraft).name);
+            await registrationApi.linkPhoneToPlayer(adminPassword, allowedPhone.id, created.id);
+          } catch {
+            // silent — player saved, phone add failed
+          }
         }
       }
     }
@@ -678,6 +685,7 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
         <PlayerModal
           player={editing === 'new' ? null : editing}
           defaultIsGuest={editing === 'new' ? editingAsGuest : undefined}
+          showPhone={isAdmin && editing === 'new'}
           onSave={handleSave}
           onClose={() => { setEditing(null); setEditingAsGuest(false); }}
           onDelete={handleDelete}

@@ -191,13 +191,20 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
     }
   };
 
-  const handleSaveEditedPlayer = async (data: Player | PlayerDraft) => {
+  const handleSaveEditedPlayer = async (data: Player | PlayerDraft, phone?: string) => {
     if (editingPlayer) {
       await playerApi.update(editingPlayer.id, data as Partial<PlayerDraft>);
     } else {
       const created = await playerApi.create(data as PlayerDraft);
       if (editingPhoneId) {
         await registrationApi.linkPhoneToPlayer(adminPassword, editingPhoneId, created.id);
+      } else if (phone && !(data as PlayerDraft).isGuest) {
+        try {
+          const allowedPhone = await registrationApi.addAllowedPhone(adminPassword, phone, (data as PlayerDraft).name);
+          await registrationApi.linkPhoneToPlayer(adminPassword, allowedPhone.id, created.id);
+        } catch {
+          // silent
+        }
       }
     }
     await load();
@@ -606,6 +613,7 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
         <PlayerModal
           player={editingPlayer}
           defaultName={!editingPlayer ? (allowedPhones.find(p => p.id === editingPhoneId)?.name ?? '') : undefined}
+          showPhone={!editingPlayer && !editingPhoneId}
           onSave={handleSaveEditedPlayer}
           onClose={() => { setEditingPlayer(null); setEditingPhoneId(null); }}
           onDelete={() => { setEditingPlayer(null); setEditingPhoneId(null); }}

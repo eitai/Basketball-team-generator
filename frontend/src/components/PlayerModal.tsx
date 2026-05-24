@@ -1,26 +1,28 @@
 import { useState } from 'react';
-import { X, Save, Trash2 } from 'lucide-react';
+import { X, Save, Trash2, Phone } from 'lucide-react';
 import type { Player, PlayerDraft, Position } from '../types/player';
 import { POSITIONS, CATEGORIES } from '../lib/constants';
 import { computeOverall } from '../lib/teams';
 
 interface Props {
   player: Player | null;
-  onSave: (data: Player | PlayerDraft) => void;
+  onSave: (data: Player | PlayerDraft, phone?: string) => void;
   onClose: () => void;
   onDelete: (id: string) => void;
   defaultIsGuest?: boolean;
   defaultName?: string;
+  showPhone?: boolean;
 }
 
 type DraftState = PlayerDraft & { id?: string };
 
-export default function PlayerModal({ player, onSave, onClose, onDelete, defaultIsGuest = false, defaultName = '' }: Props) {
+export default function PlayerModal({ player, onSave, onClose, onDelete, defaultIsGuest = false, defaultName = '', showPhone = false }: Props) {
   const [draft, setDraft] = useState<DraftState>(
     player
       ? { ...player, ballHandler: player.ballHandler ?? false, generalRating: player.generalRating ?? 5, isGuest: player.isGuest ?? false }
       : { name: defaultName, position: 'guard', defense: 5, offense: 5, shooting: 5, passing: 5, rebounding: 5, fitness: 5, ballHandler: false, generalRating: 5, isGuest: defaultIsGuest }
   );
+  const [phone, setPhone] = useState('');
   const overall = computeOverall(draft as Player);
   const isValid = draft.name.trim().length > 0;
   const update = <K extends keyof DraftState>(k: K, v: DraftState[K]) =>
@@ -114,6 +116,25 @@ export default function PlayerModal({ player, onSave, onClose, onDelete, default
             </div>
           </button>
 
+          {showPhone && !draft.isGuest && (
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-stone-400 mb-2">
+                טלפון (לרשימת שחקנים)
+              </label>
+              <div className="relative">
+                <Phone size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-500" />
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={e => setPhone(e.target.value)}
+                  placeholder="0501234567"
+                  dir="ltr"
+                  className="w-full bg-stone-950 border border-stone-700 rounded-lg pr-9 pl-4 py-3 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-orange-500 transition"
+                />
+              </div>
+            </div>
+          )}
+
           <div className="bg-gradient-to-l from-sky-500/10 to-sky-500/5 border border-sky-500/30 rounded-xl p-4">
             <div className="flex items-center justify-between mb-2">
               <div>
@@ -197,7 +218,7 @@ export default function PlayerModal({ player, onSave, onClose, onDelete, default
             <button
               onClick={() => {
                 if (isValid) {
-                  onSave(draft.id ? (draft as Player) : (draft as PlayerDraft));
+                  onSave(draft.id ? (draft as Player) : (draft as PlayerDraft), phone.trim() || undefined);
                   onClose();
                 }
               }}
