@@ -124,6 +124,15 @@ router.put('/settings', adminAuth, async (req, res) => {
   if (gameLabel !== undefined) data['gameLabel'] = gameLabel;
   if (opensAt !== undefined) data['opensAt'] = opensAt ? new Date(opensAt) : null;
 
+  // When closing registration: clear opensAt and wipe all registrations
+  if (isOpen === false) {
+    const current = await getOrCreateSettings();
+    if (current.isOpen) {
+      data['opensAt'] = null;
+      await prisma.registration.deleteMany();
+    }
+  }
+
   const settings = await prisma.gameSettings.upsert({
     where: { id: 'singleton' },
     create: { id: 'singleton', ...data },
