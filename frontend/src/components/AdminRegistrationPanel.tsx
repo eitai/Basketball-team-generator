@@ -83,20 +83,21 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
 
   useEffect(() => { load(); }, [load]);
 
-  const handleSaveSettings = async () => {
+  const saveSettings = useCallback(async (overrides: { isOpen?: boolean; gameLabel?: string; maxPlayers?: number; opensAt?: string } = {}) => {
     setSaving(true);
     try {
+      const effectiveOpensAt = 'opensAt' in overrides ? overrides.opensAt : opensAt;
       await registrationApi.updateSettings(adminPassword, {
-        gameLabel,
-        isOpen,
-        maxPlayers,
-        opensAt: opensAt ? new Date(opensAt).toISOString() : null,
+        gameLabel: overrides.gameLabel ?? gameLabel,
+        isOpen: overrides.isOpen ?? isOpen,
+        maxPlayers: overrides.maxPlayers ?? maxPlayers,
+        opensAt: effectiveOpensAt ? new Date(effectiveOpensAt).toISOString() : null,
       });
       await load();
     } finally {
       setSaving(false);
     }
-  };
+  }, [adminPassword, gameLabel, isOpen, maxPlayers, opensAt, load]);
 
   const handleAddPhone = async () => {
     if (!newPhone.trim()) { setAddError('נדרש מספר טלפון'); return; }
@@ -240,11 +241,41 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
           הגדרות משחק
         </h3>
 
+        {/* Open/Close toggle — dominant */}
+        <button
+          onClick={() => { const v = !isOpen; setIsOpen(v); saveSettings({ isOpen: v }); }}
+          disabled={saving}
+          className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl border-2 transition-all active:scale-[0.98] ${
+            isOpen
+              ? 'bg-emerald-500/10 border-emerald-500/40 hover:bg-emerald-500/15'
+              : 'bg-stone-950 border-stone-700 hover:border-stone-600'
+          }`}
+        >
+          <div className="flex items-center gap-4">
+            <div className={`w-14 h-8 rounded-full transition-all duration-300 relative shrink-0 ${isOpen ? 'bg-emerald-500' : 'bg-stone-700'}`}>
+              <span className={`absolute top-1 w-6 h-6 rounded-full bg-white shadow-md transition-all duration-300 ${isOpen ? 'right-1' : 'left-1'}`} />
+            </div>
+            <div className="text-right">
+              <div className={`text-lg font-black leading-tight ${isOpen ? 'text-emerald-300' : 'text-stone-400'}`}>
+                {isOpen ? 'הרשמה פתוחה' : 'הרשמה סגורה'}
+              </div>
+              <div className="text-xs text-stone-600 mt-0.5">
+                {isOpen ? 'לחץ לסגירה ומחיקת הנרשמים' : 'לחץ לפתיחת ההרשמה'}
+              </div>
+            </div>
+          </div>
+          {saving
+            ? <Loader2 size={18} className="animate-spin text-stone-500 shrink-0" />
+            : <div className={`w-3 h-3 rounded-full shrink-0 ${isOpen ? 'bg-emerald-400 animate-pulse' : 'bg-stone-700'}`} />
+          }
+        </button>
+
         <div>
           <label className="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1.5">שם המשחק (מוצג לחברים)</label>
           <input
             value={gameLabel}
             onChange={e => setGameLabel(e.target.value)}
+            onBlur={() => saveSettings()}
             placeholder='למשל: "שישי 23/05 – מגרש פאוולי"'
             className="w-full bg-stone-950 border border-stone-700 rounded-lg px-3 py-2 text-sm text-stone-100 placeholder-stone-600 focus:outline-none focus:border-orange-500/60 transition"
           />
@@ -257,7 +288,7 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
               {[12, 15, 16, 18, 20].map(n => (
                 <button
                   key={n}
-                  onClick={() => setMaxPlayers(n)}
+                  onClick={() => { setMaxPlayers(n); saveSettings({ maxPlayers: n }); }}
                   className={`flex-1 py-2 rounded-lg text-xs font-black tabular-nums transition border ${
                     maxPlayers === n
                       ? 'bg-orange-500 border-orange-500 text-white'
@@ -276,31 +307,10 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
               type="datetime-local"
               value={opensAt}
               onChange={e => setOpensAt(e.target.value)}
+              onBlur={() => saveSettings()}
               className="w-full bg-stone-950 border border-stone-700 rounded-lg px-3 py-2 text-sm text-stone-100 focus:outline-none focus:border-orange-500/60 transition"
             />
           </div>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setIsOpen(v => !v)}
-              className={`relative w-11 h-6 rounded-full transition-colors ${isOpen ? 'bg-emerald-500' : 'bg-stone-700'}`}
-            >
-              <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${isOpen ? 'translate-x-5' : 'translate-x-0.5'}`} />
-            </button>
-            <span className={`text-sm font-bold ${isOpen ? 'text-emerald-400' : 'text-stone-500'}`}>
-              {isOpen ? 'הרשמה פתוחה' : 'הרשמה סגורה'}
-            </span>
-          </div>
-          <button
-            onClick={handleSaveSettings}
-            disabled={saving}
-            className="bg-orange-500 hover:bg-orange-400 disabled:opacity-60 text-white font-black px-4 py-2 rounded-lg text-sm flex items-center gap-1.5 transition"
-          >
-            {saving ? <Loader2 size={14} className="animate-spin" /> : null}
-            שמור הגדרות
-          </button>
         </div>
         {isOpen && state && (
           <a
