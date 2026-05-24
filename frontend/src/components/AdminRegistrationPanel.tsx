@@ -281,35 +281,22 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1.5">מקסימום שחקנים</label>
-            <div className="flex gap-1.5">
-              {[12, 15, 16, 18, 20].map(n => (
-                <button
-                  key={n}
-                  onClick={() => { setMaxPlayers(n); saveSettings({ maxPlayers: n }); }}
-                  className={`flex-1 py-2.5 rounded-lg text-sm font-black tabular-nums transition border min-h-[44px] ${
-                    maxPlayers === n
-                      ? 'bg-orange-500 border-orange-500 text-white'
-                      : 'bg-stone-950 border-stone-700 text-stone-400 hover:border-stone-500'
-                  }`}
-                >
-                  {n}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1.5">פתיחה אוטומטית ב</label>
-            <input
-              type="datetime-local"
-              value={opensAt}
-              onChange={e => setOpensAt(e.target.value)}
-              onBlur={() => saveSettings()}
-              className="w-full bg-stone-950 border border-stone-700 rounded-lg px-3 py-2.5 text-sm text-stone-100 focus:outline-none focus:border-orange-500/60 transition min-h-[44px]"
-            />
+        <div>
+          <label className="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1.5">מקסימום שחקנים</label>
+          <div className="flex gap-1.5">
+            {[12, 15, 16, 18, 20].map(n => (
+              <button
+                key={n}
+                onClick={() => { setMaxPlayers(n); saveSettings({ maxPlayers: n }); }}
+                className={`flex-1 py-2.5 rounded-lg text-sm font-black tabular-nums transition border min-h-[44px] ${
+                  maxPlayers === n
+                    ? 'bg-orange-500 border-orange-500 text-white'
+                    : 'bg-stone-950 border-stone-700 text-stone-400 hover:border-stone-500'
+                }`}
+              >
+                {n}
+              </button>
+            ))}
           </div>
         </div>
         {isOpen && state && (
