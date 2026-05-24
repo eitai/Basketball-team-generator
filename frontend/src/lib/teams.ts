@@ -8,6 +8,10 @@ export const computeOverall = (p: Player): number => {
   return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
 };
 
+// Displayed score for admin: average of category avg and general rating
+export const computeDisplayScore = (p: Player): number =>
+  Math.round((computeOverall(p) + (p.generalRating ?? 5)) / 2);
+
 // 70% general rating, 30% category average
 export const computeBalancingScore = (p: Player): number =>
   Math.round(computeOverall(p) * 0.3 + (p.generalRating ?? 5) * 0.7);

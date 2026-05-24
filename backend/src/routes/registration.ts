@@ -140,10 +140,24 @@ router.delete('/all', adminAuth, async (_req, res) => {
 
 // GET /api/registration/allowed-phones — admin
 router.get('/allowed-phones', adminAuth, async (_req, res) => {
-  const phones = await prisma.allowedPhone.findMany({
+  let phones = await prisma.allowedPhone.findMany({
     orderBy: { name: 'asc' },
     include: { player: { select: { id: true, name: true, position: true } } },
   });
+
+  // Auto-create player profiles for any named phone that doesn't have one
+  const needsPlayer = phones.filter(p => p.name && !p.playerId);
+  if (needsPlayer.length > 0) {
+    await Promise.all(needsPlayer.map(async p => {
+      const player = await prisma.player.create({ data: { name: p.name, position: 'guard' } });
+      await prisma.allowedPhone.update({ where: { id: p.id }, data: { playerId: player.id } });
+    }));
+    phones = await prisma.allowedPhone.findMany({
+      orderBy: { name: 'asc' },
+      include: { player: { select: { id: true, name: true, position: true } } },
+    });
+  }
+
   res.json(phones);
 });
 
@@ -178,11 +192,30 @@ router.post('/allowed-phones', adminAuth, async (req, res) => {
   const normalized = normalizePhone(phone);
   if (!normalized) { res.status(400).json({ error: 'מספר טלפון לא תקין' }); return; }
 
-  const entry = await prisma.allowedPhone.upsert({
+  const trimmedName = name?.trim() ?? '';
+
+  // Upsert the allowed phone entry
+  let entry = await prisma.allowedPhone.upsert({
     where: { phone: normalized },
-    create: { phone: normalized, name: name?.trim() ?? '' },
-    update: { name: name?.trim() ?? '' },
+    create: { phone: normalized, name: trimmedName },
+    update: { name: trimmedName },
+    include: { player: { select: { id: true, name: true, position: true } } },
   });
+
+  // Auto-create a player profile if name is provided and no player linked yet
+  if (trimmedName && !entry.playerId) {
+    // Make sure no other phone is already linked to a player with this name (don't duplicate)
+    const player = await prisma.player.create({
+      data: { name: trimmedName, position: 'guard' },
+    });
+    // Unlink any existing phone that might point to this player (shouldn't happen but be safe)
+    entry = await prisma.allowedPhone.update({
+      where: { phone: normalized },
+      data: { playerId: player.id },
+      include: { player: { select: { id: true, name: true, position: true } } },
+    });
+  }
+
   res.status(201).json(entry);
 });
 

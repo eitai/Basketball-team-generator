@@ -1,7 +1,7 @@
 import { Edit3, Check } from 'lucide-react';
 import type { Player } from '../types/player';
 import { POSITIONS } from '../lib/constants';
-import { computeOverall } from '../lib/teams';
+import { computeDisplayScore } from '../lib/teams';
 
 interface Props {
   player: Player;
@@ -12,7 +12,7 @@ interface Props {
 }
 
 export default function PlayerCard({ player, attending, onToggle, onEdit, isAdmin }: Props) {
-  const overall = computeOverall(player);
+  const overall = computeDisplayScore(player);
   const pos = POSITIONS[player.position];
 
   return (

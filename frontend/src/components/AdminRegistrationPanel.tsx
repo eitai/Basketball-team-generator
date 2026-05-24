@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Settings, Users, Phone, Plus, Trash2, CheckCircle2, Clock,
-  Loader2, X, Link, Unlink, ChevronDown, ChevronUp, AlertCircle,
-  Pencil, UserPlus
+  Loader2, X, ChevronDown, ChevronUp, AlertCircle,
+  Pencil, UserPlus, Share2
 } from 'lucide-react';
 import { registrationApi } from '../api/registration';
 import { api as playerApi } from '../api/players';
@@ -20,7 +20,6 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [linkingId, setLinkingId] = useState<string | null>(null);
 
   // Settings form
   const [gameLabel, setGameLabel] = useState('');
@@ -120,16 +119,6 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
       setAllowedPhones(prev => prev.filter(p => p.id !== id));
     } catch {
       alert('שגיאה במחיקה, נסה שוב');
-    }
-  };
-
-  const handleLinkPlayer = async (phoneId: string, playerId: string | null) => {
-    setLinkingId(phoneId);
-    try {
-      const updated = await registrationApi.linkPhoneToPlayer(adminPassword, phoneId, playerId);
-      setAllowedPhones(prev => prev.map(p => p.id === phoneId ? updated : p));
-    } finally {
-      setLinkingId(null);
     }
   };
 
@@ -296,6 +285,17 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
             שמור הגדרות
           </button>
         </div>
+        {isOpen && state && (
+          <a
+            href={`https://wa.me/?text=${encodeURIComponent(`📣 ההרשמה פתוחה${state.gameLabel ? ` ל${state.gameLabel}` : ''}!\nלהרשמה: ${window.location.href}`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-300 bg-emerald-600/15 border border-emerald-600/30 hover:bg-emerald-600/25 rounded-full px-3 py-2 transition"
+          >
+            <Share2 size={12} />
+            שתף — הרשמה פתוחה
+          </a>
+        )}
       </div>
 
       {/* Registrations list */}
@@ -553,54 +553,23 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
                   </span>
                   <span className="text-xs text-stone-600 tabular-nums mr-2" dir="ltr">{p.phone}</span>
                 </div>
-                {linkingId === p.id
-                  ? <Loader2 size={13} className="animate-spin text-stone-500 shrink-0" />
-                  : <button onClick={() => handleRemovePhone(p.id)} className="text-stone-500 hover:text-rose-400 transition p-0.5 shrink-0"><X size={14} /></button>
-                }
+                <button onClick={() => handleRemovePhone(p.id)} className="text-stone-500 hover:text-rose-400 transition p-0.5 shrink-0"><X size={14} /></button>
               </div>
-              {/* Player link dropdown */}
-              <div className="flex items-center gap-2 flex-wrap">
-                {p.player ? (
-                  <div className="flex items-center gap-1">
-                    <span className="inline-flex items-center gap-1 text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2 py-0.5">
-                      <Link size={10} />{p.player.name}
-                    </span>
-                    <button
-                      onClick={() => {
-                        const fullPlayer = players.find(pl => pl.id === p.player!.id);
-                        if (fullPlayer) { setEditingPlayer(fullPlayer); setEditingPhoneId(null); }
-                      }}
-                      className="text-stone-500 hover:text-orange-400 transition p-0.5 min-h-[28px] min-w-[28px] flex items-center justify-center"
-                      title="ערוך שחקן"
-                    >
-                      <Pencil size={12} />
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => { setEditingPlayer(null); setEditingPhoneId(p.id); }}
-                    className="inline-flex items-center gap-1 text-xs text-stone-500 hover:text-orange-400 bg-stone-800 hover:bg-stone-700 border border-stone-700 rounded-full px-2 py-0.5 transition"
-                    title="צור פרופיל שחקן"
-                  >
-                    <Pencil size={10} />צור פרופיל
-                  </button>
-                )}
-                <select
-                  value={p.playerId ?? ''}
-                  onChange={e => handleLinkPlayer(p.id, e.target.value || null)}
-                  disabled={linkingId === p.id}
-                  className="mr-auto text-xs bg-stone-800 border border-stone-700 rounded-lg px-2 py-1 text-stone-300 focus:outline-none focus:border-orange-500/60 transition"
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => {
+                    if (p.player) {
+                      const fullPlayer = players.find(pl => pl.id === p.player!.id);
+                      if (fullPlayer) { setEditingPlayer(fullPlayer); setEditingPhoneId(null); }
+                    } else {
+                      setEditingPlayer(null); setEditingPhoneId(p.id);
+                    }
+                  }}
+                  className="text-stone-500 hover:text-orange-400 transition p-0.5 min-h-[28px] min-w-[28px] flex items-center justify-center"
+                  title="ערוך שחקן"
                 >
-                  <option value="">— שייך לשחקן</option>
-                  {players.filter(pl => !pl.isGuest).map(pl => (
-                    <option key={pl.id} value={pl.id}>{pl.name}</option>
-                  ))}
-                </select>
-                {p.playerId && (
-                  <button onClick={() => handleLinkPlayer(p.id, null)} className="text-stone-600 hover:text-rose-400 transition">
-                    <Unlink size={12} />
-                  </button>
-                )}
+                  <Pencil size={12} />
+                </button>
               </div>
             </div>
           ))}

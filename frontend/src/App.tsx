@@ -41,6 +41,7 @@ export default function App() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [attending, setAttending] = useState<Set<string>>(new Set());
   const [registeredPlayerIds, setRegisteredPlayerIds] = useState<Set<string>>(new Set());
+  const [nameOnlyRegistrations, setNameOnlyRegistrations] = useState<{ id: string; displayName: string }[]>([]);
   const [numTeams, setNumTeams] = useState(3);
   const [teams, setTeams] = useState<Player[][] | null>(null);
   const [editing, setEditing] = useState<Player | 'new' | null>(null);
@@ -92,6 +93,10 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
         }
       }
       setRegisteredPlayerIds(confirmedIds);
+      const nameOnly = regState.registrations
+        .filter(r => r.status === 'confirmed' && !r.playerId)
+        .map(r => ({ id: r.id, displayName: r.displayName }));
+      setNameOnlyRegistrations(nameOnly);
       setAttending(prev => {
         // Add any newly registered players; preserve manual admin toggles
         const next = new Set(prev);
@@ -411,7 +416,7 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
               <UserCheck size={20} className='text-orange-400 self-center' />
               <div>
                 <span className='text-3xl font-black tabular-nums text-orange-400'>{attendingCount}</span>
-                <span className='text-sm text-stone-500 mr-1'>/ {registeredPlayerIds.size} שחקנים</span>
+                <span className='text-sm text-stone-500 mr-1'>/ {registeredPlayerIds.size + nameOnlyRegistrations.length} שחקנים</span>
               </div>
             </div>
             <div className='flex items-center gap-2 mr-auto'>
@@ -531,7 +536,7 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
             <h2 className='text-lg font-black flex items-center gap-2'>
               <Users size={18} className='text-stone-400' />
               סגל
-              <span className='text-xs font-bold text-stone-500 bg-stone-800 px-2 py-0.5 rounded tabular-nums'>{registeredPlayerIds.size}</span>
+              <span className='text-xs font-bold text-stone-500 bg-stone-800 px-2 py-0.5 rounded tabular-nums'>{registeredPlayerIds.size + nameOnlyRegistrations.length}</span>
             </h2>
             {isAdmin && (
               <div className='flex gap-2'>
@@ -611,7 +616,7 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
             </div>
           )}
 
-          {registeredPlayerIds.size === 0 ? (
+          {registeredPlayerIds.size === 0 && nameOnlyRegistrations.length === 0 ? (
             <div className='bg-stone-900/50 border-2 border-dashed border-stone-800 rounded-2xl p-12 text-center'>
               <div className='text-5xl mb-3'>📋</div>
               <h3 className='text-xl font-black mb-1'>אין נרשמים להיום</h3>
@@ -619,25 +624,44 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
                 כשהשחקנים יירשמו הם יופיעו כאן מסומנים כמגיעים
               </p>
             </div>
-          ) : filteredPlayers.length === 0 ? (
+          ) : filteredPlayers.length === 0 && nameOnlyRegistrations.length === 0 ? (
             <div className='bg-stone-900/50 border border-stone-800 rounded-xl p-8 text-center'>
               <p className='text-stone-500 text-sm'>לא נמצאו שחקנים</p>
             </div>
           ) : (
-            <div className='max-h-[55vh] md:max-h-none overflow-y-auto'>
-              <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2'>
-                {filteredPlayers.map((p) => (
-                  <PlayerCard
-                    key={p.id}
-                    player={p}
-                    attending={attending.has(p.id)}
-                    onToggle={() => toggleAttending(p.id)}
-                    onEdit={() => setEditing(p)}
-                    isAdmin={isAdmin}
-                  />
-                ))}
-              </div>
-            </div>
+            <>
+              {filteredPlayers.length > 0 && (
+                <div className='max-h-[55vh] md:max-h-none overflow-y-auto'>
+                  <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2'>
+                    {filteredPlayers.map((p) => (
+                      <PlayerCard
+                        key={p.id}
+                        player={p}
+                        attending={attending.has(p.id)}
+                        onToggle={() => toggleAttending(p.id)}
+                        onEdit={() => setEditing(p)}
+                        isAdmin={isAdmin}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+              {nameOnlyRegistrations.length > 0 && (
+                <div className='mt-4 bg-stone-900/50 border border-stone-800 rounded-xl overflow-hidden'>
+                  <div className='px-4 py-2 border-b border-stone-800'>
+                    <span className='text-xs font-black text-stone-500 uppercase tracking-wider'>נרשמו ללא פרופיל</span>
+                  </div>
+                  <div className='divide-y divide-stone-800/40'>
+                    {nameOnlyRegistrations.map(r => (
+                      <div key={r.id} className='px-4 py-2.5 flex items-center gap-2'>
+                        <div className='w-2 h-2 rounded-full bg-emerald-500/60 shrink-0' />
+                        <span className='text-sm font-bold text-stone-300'>{r.displayName}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </section>
 

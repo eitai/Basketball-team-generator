@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Phone, CheckCircle2, Clock, Lock, RefreshCw, LogOut, Loader2, Users, Share2 } from 'lucide-react';
+import { Phone, CheckCircle2, Clock, Lock, RefreshCw, LogOut, Loader2, Users, UserPlus } from 'lucide-react';
 import { registrationApi } from '../api/registration';
 import type { RegistrationState, RegisterResult } from '../types/registration';
 
@@ -7,11 +7,14 @@ export default function RegistrationTab() {
   const [state, setState] = useState<RegistrationState | null>(null);
   const [loading, setLoading] = useState(true);
   const [phone, setPhone] = useState('');
-  const [name, setName] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [myResult, setMyResult] = useState<RegisterResult | null>(null);
   const [unregistering, setUnregistering] = useState(false);
+  const [extraPhone, setExtraPhone] = useState('');
+  const [extraSubmitting, setExtraSubmitting] = useState(false);
+  const [extraError, setExtraError] = useState('');
+  const [extraResults, setExtraResults] = useState<RegisterResult[]>([]);
 
   const fetchState = useCallback(async () => {
     try {
@@ -32,11 +35,10 @@ export default function RegistrationTab() {
 
   const handleRegister = async () => {
     if (!phone.trim()) { setError('הזן מספר טלפון'); return; }
-    if (!name.trim()) { setError('הזן את השם שלך'); return; }
     setSubmitting(true);
     setError('');
     try {
-      const result = await registrationApi.register(phone.trim(), name.trim());
+      const result = await registrationApi.register(phone.trim(), '');
       setMyResult(result);
       await fetchState();
     } catch (e: unknown) {
@@ -54,12 +56,29 @@ export default function RegistrationTab() {
       await registrationApi.unregister(phone.trim());
       setMyResult(null);
       setPhone('');
-      setName('');
+      setExtraResults([]);
       await fetchState();
     } catch {
       // silent
     } finally {
       setUnregistering(false);
+    }
+  };
+
+  const handleExtraRegister = async () => {
+    if (!extraPhone.trim()) { setExtraError('הזן מספר טלפון'); return; }
+    setExtraSubmitting(true);
+    setExtraError('');
+    try {
+      const result = await registrationApi.register(extraPhone.trim(), '');
+      setExtraResults(prev => [...prev, result]);
+      setExtraPhone('');
+      await fetchState();
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'שגיאה, נסה שוב';
+      setExtraError(msg);
+    } finally {
+      setExtraSubmitting(false);
     }
   };
 
@@ -91,21 +110,10 @@ export default function RegistrationTab() {
             </h2>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
               {state.isOpen ? (
-                <>
-                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-2.5 py-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    הרשמה פתוחה
-                  </span>
-                  <a
-                    href={`https://wa.me/?text=${encodeURIComponent(`📣 ההרשמה פתוחה${state.gameLabel ? ` ל${state.gameLabel}` : ''}!\nלהרשמה: ${window.location.href}`)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-300 bg-emerald-600/15 border border-emerald-600/30 hover:bg-emerald-600/25 rounded-full px-2.5 py-1 transition min-h-[28px]"
-                  >
-                    <Share2 size={11} />
-                    שתף בוואטסאפ
-                  </a>
-                </>
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-2.5 py-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  הרשמה פתוחה
+                </span>
               ) : state.opensAt ? (
                 <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 rounded-full px-2.5 py-1">
                   <Clock size={11} />
@@ -125,47 +133,87 @@ export default function RegistrationTab() {
         </div>
 
         {myResult ? (
-          <div className={`rounded-xl p-4 border ${
-            myResult.status === 'confirmed'
-              ? 'bg-emerald-500/10 border-emerald-500/30'
-              : 'bg-amber-500/10 border-amber-500/30'
-          }`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {myResult.status === 'confirmed' ? (
-                  <CheckCircle2 size={22} className="text-emerald-400 shrink-0" />
-                ) : (
-                  <Clock size={22} className="text-amber-400 shrink-0" />
-                )}
-                <div>
-                  <div className={`font-black text-sm ${myResult.status === 'confirmed' ? 'text-emerald-300' : 'text-amber-300'}`}>
-                    {myResult.status === 'confirmed' ? 'אתה מגיע! 🏀' : 'אתה ברשימת ההמתנה'}
-                  </div>
-                  <div className="text-xs text-stone-400 mt-0.5">
-                    {myResult.displayName} · מקום #{myResult.position}
+          <div className="space-y-3">
+            <div className={`rounded-xl p-4 border ${
+              myResult.status === 'confirmed'
+                ? 'bg-emerald-500/10 border-emerald-500/30'
+                : 'bg-amber-500/10 border-amber-500/30'
+            }`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {myResult.status === 'confirmed' ? (
+                    <CheckCircle2 size={22} className="text-emerald-400 shrink-0" />
+                  ) : (
+                    <Clock size={22} className="text-amber-400 shrink-0" />
+                  )}
+                  <div>
+                    <div className={`font-black text-sm ${myResult.status === 'confirmed' ? 'text-emerald-300' : 'text-amber-300'}`}>
+                      {myResult.status === 'confirmed' ? 'אתה מגיע! 🏀' : 'אתה ברשימת ההמתנה'}
+                    </div>
+                    <div className="text-xs text-stone-400 mt-0.5">
+                      {myResult.displayName} · מקום #{myResult.position}
+                    </div>
                   </div>
                 </div>
+                <button
+                  onClick={handleUnregister}
+                  disabled={unregistering}
+                  className="text-xs text-stone-500 hover:text-rose-400 font-bold flex items-center gap-1 transition"
+                >
+                  {unregistering ? <Loader2 size={12} className="animate-spin" /> : <LogOut size={12} />}
+                  ביטול הרשמה
+                </button>
               </div>
-              <button
-                onClick={handleUnregister}
-                disabled={unregistering}
-                className="text-xs text-stone-500 hover:text-rose-400 font-bold flex items-center gap-1 transition"
-              >
-                {unregistering ? <Loader2 size={12} className="animate-spin" /> : <LogOut size={12} />}
-                ביטול הרשמה
-              </button>
             </div>
+
+            {/* Extra registrations already added */}
+            {extraResults.map((r, i) => (
+              <div key={i} className={`flex items-center gap-2 rounded-lg px-3 py-2 border text-xs font-bold ${
+                r.status === 'confirmed'
+                  ? 'bg-emerald-500/8 border-emerald-500/20 text-emerald-400'
+                  : 'bg-amber-500/8 border-amber-500/20 text-amber-400'
+              }`}>
+                {r.status === 'confirmed' ? <CheckCircle2 size={13} /> : <Clock size={13} />}
+                <span>{r.displayName}</span>
+                <span className="text-stone-600">·</span>
+                <span>{r.status === 'confirmed' ? 'מאושר' : 'המתנה'} · #{r.position}</span>
+              </div>
+            ))}
+
+            {/* Add another person */}
+            {state.isOpen && (
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-stone-500 flex items-center gap-1.5">
+                  <UserPlus size={12} />
+                  רשום עוד מישהו
+                </p>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Phone size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-500" />
+                    <input
+                      type="tel"
+                      value={extraPhone}
+                      onChange={e => { setExtraPhone(e.target.value); setExtraError(''); }}
+                      onKeyDown={e => { if (e.key === 'Enter') handleExtraRegister(); }}
+                      placeholder="מספר טלפון"
+                      dir="ltr"
+                      className="w-full bg-stone-950 border border-stone-700 rounded-xl pr-9 pl-3 py-2.5 text-sm text-stone-100 placeholder-stone-600 focus:outline-none focus:border-orange-500/60 transition"
+                    />
+                  </div>
+                  <button
+                    onClick={handleExtraRegister}
+                    disabled={extraSubmitting}
+                    className="bg-stone-700 hover:bg-stone-600 disabled:opacity-50 text-stone-100 font-black px-4 py-2.5 rounded-xl flex items-center gap-1.5 transition text-sm shrink-0"
+                  >
+                    {extraSubmitting ? <Loader2 size={14} className="animate-spin" /> : <UserPlus size={14} />}
+                  </button>
+                </div>
+                {extraError && <p className="text-rose-400 text-xs">{extraError}</p>}
+              </div>
+            )}
           </div>
         ) : (
           <div className="space-y-2">
-            <input
-              type="text"
-              value={name}
-              onChange={e => { setName(e.target.value); setError(''); }}
-              onKeyDown={e => { if (e.key === 'Enter') handleRegister(); }}
-              placeholder="השם שלך"
-              className="w-full bg-stone-950 border border-stone-700 rounded-xl px-4 py-3 text-sm text-stone-100 placeholder-stone-600 focus:outline-none focus:border-orange-500/60 transition"
-            />
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <Phone size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-500" />
