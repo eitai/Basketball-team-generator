@@ -331,29 +331,29 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
         {/* Admin manual registration */}
         {adminRegOpen && (
           <div className="px-4 py-3 border-b border-stone-800 bg-stone-950/50 space-y-2">
+            <input
+              value={adminRegName}
+              onChange={e => { setAdminRegName(e.target.value); setAdminRegError(''); setAdminRegResult(null); }}
+              onKeyDown={e => { if (e.key === 'Enter') handleAdminRegister(); }}
+              placeholder="שם"
+              className="w-full bg-stone-900 border border-stone-700 rounded-lg px-3 py-2.5 text-sm text-stone-100 placeholder-stone-600 focus:outline-none focus:border-orange-500/60 transition min-h-[44px]"
+            />
             <div className="flex gap-2">
-              <input
-                value={adminRegName}
-                onChange={e => { setAdminRegName(e.target.value); setAdminRegError(''); setAdminRegResult(null); }}
-                onKeyDown={e => { if (e.key === 'Enter') handleAdminRegister(); }}
-                placeholder="שם"
-                className="flex-1 bg-stone-900 border border-stone-700 rounded-lg px-3 py-2.5 text-sm text-stone-100 placeholder-stone-600 focus:outline-none focus:border-orange-500/60 transition min-h-[44px]"
-              />
               <input
                 value={adminRegPhone}
                 onChange={e => { setAdminRegPhone(e.target.value); setAdminRegError(''); setAdminRegResult(null); }}
                 onKeyDown={e => { if (e.key === 'Enter') handleAdminRegister(); }}
                 placeholder="0501234567"
                 dir="ltr"
-                className="w-36 bg-stone-900 border border-stone-700 rounded-lg px-3 py-2.5 text-sm text-stone-100 placeholder-stone-600 focus:outline-none focus:border-orange-500/60 transition min-h-[44px]"
+                className="flex-1 bg-stone-900 border border-stone-700 rounded-lg px-3 py-2.5 text-sm text-stone-100 placeholder-stone-600 focus:outline-none focus:border-orange-500/60 transition min-h-[44px]"
               />
               <button
                 onClick={handleAdminRegister}
                 disabled={adminRegLoading}
-                className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-black px-3 py-2.5 rounded-lg transition flex items-center gap-1 shrink-0 min-h-[44px] text-sm"
+                className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-black px-4 py-2.5 rounded-lg transition flex items-center gap-1.5 shrink-0 min-h-[44px] text-sm"
               >
                 {adminRegLoading ? <Loader2 size={14} className="animate-spin" /> : <UserPlus size={14} />}
-                <span className="hidden sm:inline">הרשם</span>
+                הרשם
               </button>
             </div>
             {adminRegError && (
@@ -468,7 +468,7 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
         <div className="px-4 py-3 border-b border-stone-800">
           <h3 className="text-base font-black flex items-center gap-2 text-stone-200">
             <Phone size={16} className="text-orange-400" />
-            רשימת מורשים ({allowedPhones.length})
+            רשימת שחקנים ({allowedPhones.length})
           </h3>
         </div>
 
