@@ -424,7 +424,7 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
                 </div>
                 <CheckCircle2 size={13} className="text-emerald-500 shrink-0" />
                 <span className="text-sm font-bold text-stone-200 flex-1">{r.displayName}</span>
-                <span className="text-xs text-stone-600 tabular-nums">
+                <span className="text-xs text-stone-600 tabular-nums hidden sm:block">
                   {r.phone?.startsWith('player:') ? 'מנהל' : r.phone}
                 </span>
                 <button onClick={() => handleRemoveRegistration(r.id)} className="text-stone-700 hover:text-rose-400 transition p-0.5">
@@ -447,7 +447,7 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
                 </div>
                 <Clock size={13} className="text-amber-500 shrink-0" />
                 <span className="text-sm font-bold text-stone-400 flex-1">{r.displayName}</span>
-                <span className="text-xs text-stone-600 tabular-nums">
+                <span className="text-xs text-stone-600 tabular-nums hidden sm:block">
                   {r.phone?.startsWith('player:') ? 'מנהל' : r.phone}
                 </span>
                 <button onClick={() => handleRemoveRegistration(r.id)} className="text-stone-700 hover:text-rose-400 transition p-0.5">
@@ -473,27 +473,30 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
         </div>
 
         {/* Add single phone */}
-        <div className="p-4 border-b border-stone-800">
+        <div className="p-4 border-b border-stone-800 space-y-2">
+          <input
+            value={newName}
+            onChange={e => { setNewName(e.target.value); setAddError(''); }}
+            onKeyDown={e => { if (e.key === 'Enter') handleAddPhone(); }}
+            placeholder="שם (אופציונלי)"
+            className="w-full bg-stone-950 border border-stone-700 rounded-lg px-3 py-2.5 text-sm text-stone-100 placeholder-stone-600 focus:outline-none focus:border-orange-500/60 transition"
+          />
           <div className="flex gap-2">
-            <input
-              value={newName}
-              onChange={e => { setNewName(e.target.value); setAddError(''); }}
-              placeholder="שם (אופציונלי)"
-              className="flex-1 bg-stone-950 border border-stone-700 rounded-lg px-3 py-2 text-sm text-stone-100 placeholder-stone-600 focus:outline-none focus:border-orange-500/60 transition"
-            />
             <input
               value={newPhone}
               onChange={e => { setNewPhone(e.target.value); setAddError(''); }}
+              onKeyDown={e => { if (e.key === 'Enter') handleAddPhone(); }}
               placeholder="0501234567"
               dir="ltr"
-              className="w-32 bg-stone-950 border border-stone-700 rounded-lg px-3 py-2 text-sm text-stone-100 placeholder-stone-600 focus:outline-none focus:border-orange-500/60 transition"
+              className="flex-1 bg-stone-950 border border-stone-700 rounded-lg px-3 py-2.5 text-sm text-stone-100 placeholder-stone-600 focus:outline-none focus:border-orange-500/60 transition"
             />
             <button
               onClick={handleAddPhone}
               disabled={addingPhone}
-              className="bg-stone-700 hover:bg-stone-600 disabled:opacity-50 text-stone-100 font-bold px-3 py-2 rounded-lg transition"
+              className="bg-stone-700 hover:bg-stone-600 disabled:opacity-50 text-stone-100 font-bold px-4 py-2.5 rounded-lg transition flex items-center gap-1.5 min-h-[44px]"
             >
               {addingPhone ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+              <span className="text-sm">הוסף</span>
             </button>
           </div>
           {addError && <p className="text-rose-400 text-xs mt-1">{addError}</p>}
@@ -547,17 +550,14 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
         {/* Phones list */}
         <div className="divide-y divide-stone-800/40 max-h-96 overflow-y-auto">
           {allowedPhones.map(p => (
-            <div key={p.id} className="px-4 py-2.5 space-y-1.5">
-              <div className="flex items-center gap-2">
-                <div className="flex-1 min-w-0">
-                  <span className="text-sm font-bold text-stone-200">
-                    {p.name || <span className="text-stone-600 italic">ללא שם</span>}
-                  </span>
-                  <span className="text-xs text-stone-600 tabular-nums mr-2" dir="ltr">{p.phone}</span>
+            <div key={p.id} className="flex items-center gap-2 px-4 py-3">
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-bold text-stone-200 truncate">
+                  {p.name || <span className="text-stone-600 italic">ללא שם</span>}
                 </div>
-                <button onClick={() => handleRemovePhone(p.id)} className="text-stone-500 hover:text-rose-400 transition p-0.5 shrink-0"><X size={14} /></button>
+                <div className="text-xs text-stone-500 tabular-nums mt-0.5" dir="ltr">{p.phone}</div>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 shrink-0">
                 <button
                   onClick={() => {
                     if (p.player) {
@@ -567,10 +567,13 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
                       setEditingPlayer(null); setEditingPhoneId(p.id);
                     }
                   }}
-                  className="text-stone-500 hover:text-orange-400 transition p-0.5 min-h-[28px] min-w-[28px] flex items-center justify-center"
+                  className="text-stone-500 hover:text-orange-400 transition min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg"
                   title="ערוך שחקן"
                 >
-                  <Pencil size={12} />
+                  <Pencil size={13} />
+                </button>
+                <button onClick={() => handleRemovePhone(p.id)} className="text-stone-500 hover:text-rose-400 transition min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg">
+                  <X size={14} />
                 </button>
               </div>
             </div>
