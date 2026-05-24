@@ -4,10 +4,15 @@ import { prisma } from '../lib/prisma';
 const router = Router();
 
 router.get('/', async (_req, res) => {
-  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
-  await prisma.player.deleteMany({ where: { isGuest: true, createdAt: { lt: cutoff } } });
-  const players = await prisma.player.findMany({ orderBy: { id: 'asc' } });
-  res.json(players);
+  try {
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    await prisma.player.deleteMany({ where: { isGuest: true, createdAt: { lt: cutoff } } }).catch(() => {});
+    const players = await prisma.player.findMany({ orderBy: { id: 'asc' } });
+    res.json(players);
+  } catch (err) {
+    console.error('GET /api/players error:', err);
+    res.status(500).json({ error: 'שגיאה בטעינת שחקנים' });
+  }
 });
 
 router.post('/', async (req, res) => {

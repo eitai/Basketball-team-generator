@@ -116,8 +116,9 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
     (async () => {
       try {
         const fetched = await api.getAll();
-        setPlayers(fetched);
-        await syncRegistration(fetched);
+        const players = Array.isArray(fetched) ? fetched : [];
+        setPlayers(players);
+        await syncRegistration(players);
         const savedCount = localStorage.getItem(TEAMS_COUNT_KEY);
         if (savedCount) setNumTeams(parseInt(savedCount) || 3);
       } catch (e) {
@@ -132,8 +133,9 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
   useEffect(() => {
     if (activeTab === 'roster') {
       api.getAll().then(fetched => {
-        setPlayers(fetched);
-        syncRegistration(fetched);
+        const players = Array.isArray(fetched) ? fetched : [];
+        setPlayers(players);
+        syncRegistration(players);
       }).catch(() => {});
     }
   }, [activeTab, syncRegistration]);

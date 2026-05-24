@@ -68,12 +68,14 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
         playerApi.getAll(),
       ]);
       setState(s);
-      setAllowedPhones(phones);
-      setPlayers(allPlayers);
+      setAllowedPhones(Array.isArray(phones) ? phones : []);
+      setPlayers(Array.isArray(allPlayers) ? allPlayers : []);
       setGameLabel(s.gameLabel);
       setIsOpen(s.isOpen);
       setMaxPlayers(s.maxPlayers);
       setOpensAt(s.opensAt ? new Date(s.opensAt).toISOString().slice(0, 16) : '');
+    } catch {
+      // silent — show empty state rather than crash
     } finally {
       setLoading(false);
     }
