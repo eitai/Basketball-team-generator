@@ -223,6 +223,14 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
   const confirmed = (state?.registrations ?? []).filter((r: RegistrationEntry) => r.status === 'confirmed');
   const waitlist = (state?.registrations ?? []).filter((r: RegistrationEntry) => r.status === 'waitlist');
 
+  function fmtTime(iso: string) {
+    const d = new Date(iso);
+    const now = new Date();
+    const time = d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+    if (d.toDateString() === now.toDateString()) return time;
+    return d.toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit' }) + ' ' + time;
+  }
+
   return (
     <div className="space-y-5">
       {/* Game settings */}
@@ -296,7 +304,7 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
         </div>
         {isOpen && state && (
           <a
-            href={`https://wa.me/?text=${encodeURIComponent(`📣 ההרשמה פתוחה${state.gameLabel ? ` ל${state.gameLabel}` : ''}!\nלהרשמה: ${window.location.href}`)}`}
+            href={`https://wa.me/?text=${encodeURIComponent(`📣 ההרשמה פתוחה${state.gameLabel ? ` ל${state.gameLabel}` : ''}!\nלהרשמה: ${window.location.origin + window.location.pathname}#register`)}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-300 bg-emerald-600/15 border border-emerald-600/30 hover:bg-emerald-600/25 rounded-full px-3 py-2 transition"
@@ -425,16 +433,14 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
               <span className="text-xs font-black text-emerald-500 uppercase tracking-wider">מגיעים ({confirmed.length})</span>
             </div>
             {confirmed.map((r: RegistrationEntry) => (
-              <div key={r.id} className="flex items-center gap-3 px-4 py-2.5 border-b border-stone-800/30">
+              <div key={r.id} className="flex items-center gap-2 px-4 py-2.5 border-b border-stone-800/30">
                 <div className="w-6 h-6 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0">
                   <span className="text-[10px] font-black text-emerald-400">{r.position}</span>
                 </div>
                 <CheckCircle2 size={13} className="text-emerald-500 shrink-0" />
-                <span className="text-sm font-bold text-stone-200 flex-1">{r.displayName}</span>
-                <span className="text-xs text-stone-600 tabular-nums hidden sm:block">
-                  {r.phone?.startsWith('player:') ? 'מנהל' : r.phone}
-                </span>
-                <button onClick={() => handleRemoveRegistration(r.id)} className="text-stone-700 hover:text-rose-400 transition p-0.5">
+                <span className="text-sm font-bold text-stone-200 flex-1 min-w-0 truncate">{r.displayName}</span>
+                <span className="text-xs text-stone-500 tabular-nums shrink-0">{fmtTime(r.registeredAt)}</span>
+                <button onClick={() => handleRemoveRegistration(r.id)} className="text-stone-700 hover:text-rose-400 transition min-h-[32px] min-w-[32px] flex items-center justify-center shrink-0">
                   <X size={14} />
                 </button>
               </div>
@@ -448,16 +454,14 @@ export default function AdminRegistrationPanel({ adminPassword }: Props) {
               <span className="text-xs font-black text-amber-500 uppercase tracking-wider">המתנה ({waitlist.length})</span>
             </div>
             {waitlist.map((r: RegistrationEntry) => (
-              <div key={r.id} className="flex items-center gap-3 px-4 py-2.5 border-b border-stone-800/30 opacity-70">
+              <div key={r.id} className="flex items-center gap-2 px-4 py-2.5 border-b border-stone-800/30 opacity-70">
                 <div className="w-6 h-6 rounded-full bg-stone-700 flex items-center justify-center shrink-0">
                   <span className="text-[10px] font-black text-stone-400">{r.position}</span>
                 </div>
                 <Clock size={13} className="text-amber-500 shrink-0" />
-                <span className="text-sm font-bold text-stone-400 flex-1">{r.displayName}</span>
-                <span className="text-xs text-stone-600 tabular-nums hidden sm:block">
-                  {r.phone?.startsWith('player:') ? 'מנהל' : r.phone}
-                </span>
-                <button onClick={() => handleRemoveRegistration(r.id)} className="text-stone-700 hover:text-rose-400 transition p-0.5">
+                <span className="text-sm font-bold text-stone-400 flex-1 min-w-0 truncate">{r.displayName}</span>
+                <span className="text-xs text-stone-500 tabular-nums shrink-0">{fmtTime(r.registeredAt)}</span>
+                <button onClick={() => handleRemoveRegistration(r.id)} className="text-stone-700 hover:text-rose-400 transition min-h-[32px] min-w-[32px] flex items-center justify-center shrink-0">
                   <X size={14} />
                 </button>
               </div>

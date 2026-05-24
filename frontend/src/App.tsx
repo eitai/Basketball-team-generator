@@ -60,7 +60,9 @@ const [locked, setLocked] = useState<Map<string, number>>(() => {
   });
   const [draggingPlayer, setDraggingPlayer] = useState<{ player: Player; fromTeamIdx: number } | null>(null);
   const [touchDragTargetIdx, setTouchDragTargetIdx] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<'roster' | 'registration' | 'admin-reg'>('roster');
+  const [activeTab, setActiveTab] = useState<'roster' | 'registration' | 'admin-reg'>(() =>
+    window.location.hash === '#register' ? 'registration' : 'roster'
+  );
   const [isAdmin, setIsAdmin] = useState(() => sessionStorage.getItem('isAdmin') === '1');
   const [adminPassword, setAdminPassword] = useState(() => sessionStorage.getItem('adminPwd') ?? '');
   const [editingAsGuest, setEditingAsGuest] = useState(false);

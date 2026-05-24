@@ -102,6 +102,14 @@ export default function RegistrationTab() {
   const waitlist = state.registrations.filter((r) => r.status === 'waitlist');
   const spotsLeft = Math.max(0, state.maxPlayers - confirmed.length);
 
+  function fmtTime(iso: string) {
+    const d = new Date(iso);
+    const now = new Date();
+    const time = d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+    if (d.toDateString() === now.toDateString()) return time;
+    return d.toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit' }) + ' ' + time;
+  }
+
   return (
     <div className='space-y-5'>
       {/* Header card */}
@@ -283,12 +291,13 @@ export default function RegistrationTab() {
           </div>
           <div className='divide-y divide-stone-800/50'>
             {confirmed.map((r) => (
-              <div key={r.id} className='flex items-center gap-3 px-4 py-2.5'>
+              <div key={r.id} className='flex items-center gap-2 px-4 py-2.5'>
                 <div className='w-6 h-6 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0'>
                   <span className='text-[10px] font-black text-emerald-400 tabular-nums'>{r.position}</span>
                 </div>
-                <span className='text-sm font-bold text-stone-200 flex-1'>{r.displayName}</span>
-                <CheckCircle2 size={14} className='text-emerald-500/60' />
+                <span className='text-sm font-bold text-stone-200 flex-1 min-w-0 truncate'>{r.displayName}</span>
+                <span className='text-[11px] text-stone-600 tabular-nums shrink-0'>{fmtTime(r.registeredAt)}</span>
+                <CheckCircle2 size={14} className='text-emerald-500/60 shrink-0' />
               </div>
             ))}
           </div>
@@ -304,12 +313,13 @@ export default function RegistrationTab() {
           </div>
           <div className='divide-y divide-stone-800/50'>
             {waitlist.map((r) => (
-              <div key={r.id} className='flex items-center gap-3 px-4 py-2.5 opacity-70'>
+              <div key={r.id} className='flex items-center gap-2 px-4 py-2.5 opacity-70'>
                 <div className='w-6 h-6 rounded-full bg-stone-700 flex items-center justify-center shrink-0'>
                   <span className='text-[10px] font-black text-stone-400 tabular-nums'>{r.position}</span>
                 </div>
-                <span className='text-sm font-bold text-stone-400 flex-1'>{r.displayName}</span>
-                <Clock size={14} className='text-amber-500/50' />
+                <span className='text-sm font-bold text-stone-400 flex-1 min-w-0 truncate'>{r.displayName}</span>
+                <span className='text-[11px] text-stone-600 tabular-nums shrink-0'>{fmtTime(r.registeredAt)}</span>
+                <Clock size={14} className='text-amber-500/50 shrink-0' />
               </div>
             ))}
           </div>
